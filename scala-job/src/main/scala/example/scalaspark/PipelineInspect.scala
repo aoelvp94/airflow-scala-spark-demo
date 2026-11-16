@@ -25,7 +25,14 @@ object PipelineInspect {
       silver.printSchema()
       println("SILVER_ROWS")
       silver.orderBy("order_id").show(5, truncate = false)
-      println(s"SILVER_COUNT=${silver.count()} CHECKSUM=${Pipeline.checksum(silver)}")
+      val tmp = "/tmp/pipeline/inspect"
+      silver.write.mode("overwrite").parquet(s"$tmp/silver")
+      val gold = Pipeline.toGold(spark, s"$tmp/silver", s"$tmp/gold")
+      println("GOLD_REVENUE")
+      spark.read.parquet(gold.revenuePath).show(8, truncate = false)
+      println("GOLD_VIP")
+      spark.read.parquet(gold.vipPath).show(truncate = false)
+      println(s"SILVER_COUNT=${silver.count()} CHECKSUM=${Pipeline.checksum(silver)} GOLD_KPIS=${gold.kpis}")
     } finally spark.stop()
   }
 }

@@ -54,32 +54,34 @@ object DariaNativeDag {
   }
 }
 
-class CheckIngestTransform extends Task {
-  private val log: Logger = LogManager.getLogger(classOf[CheckIngestTransform])
+class CheckMedallion extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[CheckMedallion])
 
   override def execute(context: Context, client: Client): Unit = {
-    val m = client.getXCom("transform").asInstanceOf[java.util.Map[String, Any]].asScala
-    log.info("Native ingest/transform Dag got {}", m)
-    require(m("silver_rows").asInstanceOf[Number].longValue() == Pipeline.DefaultUniqueRows)
-    require(m("bronze_rows").asInstanceOf[Number].longValue() == Pipeline.bronzeCount(Pipeline.DefaultUniqueRows))
+    val m = client.getXCom("silver_to_gold").asInstanceOf[java.util.Map[String, Any]].asScala
+    log.info("Native medallion Dag got {}", m)
+    require(m("revenue_rows").asInstanceOf[Number].longValue() > 0)
+    require(m("segment_rows").asInstanceOf[Number].longValue() > 0)
   }
 }
 
-object IngestTransformNativeDag {
+object MedallionNativeDag {
   def build(): DagDef = {
-    val dag = new DagDef("scala_native_ingest_transform")
+    val dag = new DagDef("scala_native_medallion")
       .config(
         "description",
-        "Native Scala Dag: ingest messy orders from a paginated HTTP API, then transform bronze to silver with spark-daria"
+        "Native Scala Dag: HTTP ingest to bronze, spark-daria silver, then gold aggregates"
       )
       .config("queue", "scala")
       .config("catchup", false)
-      .config("tags", Seq("scala", "spark", "daria", "ingest", "native").asJava)
+      .config("tags", Seq("scala", "spark", "daria", "medallion", "native").asJava)
     val ingest = dag.task("ingest", classOf[SparkIngest])
-    val transform = dag.task("transform", classOf[SparkTransform])
-    val check = dag.task("check", classOf[CheckIngestTransform])
-    transform.after(ingest)
-    check.after(transform)
+    val silver = dag.task("bronze_to_silver", classOf[SparkBronzeToSilver])
+    val gold = dag.task("silver_to_gold", classOf[SparkSilverToGold])
+    val check = dag.task("check", classOf[CheckMedallion])
+    silver.after(ingest)
+    gold.after(silver)
+    check.after(gold)
     dag
   }
 }

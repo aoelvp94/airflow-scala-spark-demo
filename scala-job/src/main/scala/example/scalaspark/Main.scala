@@ -23,9 +23,10 @@ object ScalaBundle {
       .register("bench_scala_plain_java_sdk", "workload", classOf[SparkPlainWorkload])
       .register(NativeDag.build())
       .register(DariaNativeDag.build())
-      .register("scala_spark_ingest_transform", "ingest", classOf[SparkIngest])
-      .register("scala_spark_ingest_transform", "transform", classOf[SparkTransform])
-      .register(IngestTransformNativeDag.build())
+      .register("scala_spark_medallion", "ingest", classOf[SparkIngest])
+      .register("scala_spark_medallion", "bronze_to_silver", classOf[SparkBronzeToSilver])
+      .register("scala_spark_medallion", "silver_to_gold", classOf[SparkSilverToGold])
+      .register(MedallionNativeDag.build())
 }
 
 object BundleMain {

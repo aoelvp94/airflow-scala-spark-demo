@@ -124,11 +124,10 @@ class SparkIngest extends Task {
   private val log: Logger = LogManager.getLogger(classOf[SparkIngest])
 
   override def execute(context: Context, client: Client): Unit = {
-    val spark = Workload.session("pipeline-ingest")
+    val root = Pipeline.rootDir(context.ti.runId)
+    val spark = Lineage.session("pipeline-ingest", s"$root/lineage")
     try {
-      val root = Pipeline.rootDir(context.ti.runId)
-      val unique = Pipeline.DefaultUniqueRows
-      val result = Pipeline.ingest(spark, s"$root/bronze", unique, Pipeline.DefaultPageSize)
+      val result = Pipeline.ingest(spark, s"$root/bronze", Pipeline.DefaultUniqueRows, Pipeline.DefaultPageSize)
       val bronze = spark.read.schema(Pipeline.BronzeSchema).parquet(result.bronzePath)
       log.info(
         "Ingested {} bronze rows ({} unique ids) from {} pages at {}",
@@ -141,6 +140,7 @@ class SparkIngest extends Task {
       bronze.show(5, truncate = false)
       client.setXCom(
         Map(
+          "run_root" -> root,
           "bronze_path" -> result.bronzePath,
           "rows" -> result.rows,
           "unique_ids" -> result.uniqueIds,
@@ -152,35 +152,99 @@ class SparkIngest extends Task {
   }
 }
 
-class SparkTransform extends Task {
-  private val log: Logger = LogManager.getLogger(classOf[SparkTransform])
+class SparkBronzeToSilver extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[SparkBronzeToSilver])
 
   override def execute(context: Context, client: Client): Unit = {
     val upstream = client.getXCom("ingest").asInstanceOf[java.util.Map[String, Any]].asScala
+    val root = upstream.get("run_root").map(_.toString).getOrElse(Pipeline.rootDir(context.ti.runId))
     val bronzePath = upstream("bronze_path").toString
-    val silverPath = bronzePath.replaceAll("bronze/?$", "silver")
-    val spark = Workload.session("pipeline-transform")
+    val silverPath = s"$root/silver"
+    val spark = Lineage.session("pipeline-bronze-to-silver", s"$root/lineage")
     try {
       val result = Pipeline.transform(spark, bronzePath, silverPath, "daria")
       val silver = spark.read.parquet(result.silverPath)
       log.info(
-        "Transformed {} bronze rows into {} silver rows, checksum {}",
+        "Bronze {} rows -> silver {} rows, checksum {}",
         Long.box(result.bronzeRows),
         Long.box(result.silverRows),
         Long.box(result.checksum)
       )
+      import com.github.mrpowers.spark.daria.sql.DataFrameExt._
+      silver.printSchemaInCodeFormat()
       silver.printSchema()
       silver.show(5, truncate = false)
       require(
         result.silverRows == result.bronzeRows - Pipeline.duplicateCount(result.silverRows),
         s"unexpected silver count $result"
       )
+      Lineage.writeJson(java.nio.file.Paths.get(root, "quality.json"), result.quality)
       client.setXCom(
         Map(
+          "run_root" -> root,
+          "bronze_path" -> bronzePath,
           "silver_path" -> result.silverPath,
           "bronze_rows" -> result.bronzeRows,
           "silver_rows" -> result.silverRows,
           "checksum" -> result.checksum
+        ).asJava
+      )
+    } finally spark.stop()
+  }
+}
+
+class SparkSilverToGold extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[SparkSilverToGold])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val upstream = client.getXCom("bronze_to_silver").asInstanceOf[java.util.Map[String, Any]].asScala
+    val root = upstream("run_root").toString
+    val silverPath = upstream("silver_path").toString
+    val spark = Lineage.session("pipeline-silver-to-gold", s"$root/lineage")
+    try {
+      val gold = Pipeline.toGold(spark, silverPath, s"$root/gold")
+      log.info(
+        "Gold revenue rows {}, segments {}, kpis {}",
+        Long.box(gold.revenueRows),
+        Long.box(gold.segmentRows),
+        gold.kpis
+      )
+      spark.read.parquet(gold.revenuePath).show(8, truncate = false)
+      spark.read.parquet(gold.vipPath).show(truncate = false)
+      val ingest = IngestResult(
+        bronzePath = upstream.get("bronze_path").map(_.toString).getOrElse(s"$root/bronze"),
+        rows = upstream("bronze_rows").asInstanceOf[Number].longValue(),
+        uniqueIds = upstream("silver_rows").asInstanceOf[Number].longValue(),
+        pages = 0,
+        sourceUrl = "",
+        runRoot = root
+      )
+      val silver = TransformResult(
+        silverPath = silverPath,
+        bronzeRows = ingest.rows,
+        silverRows = upstream("silver_rows").asInstanceOf[Number].longValue(),
+        checksum = upstream("checksum").asInstanceOf[Number].longValue(),
+        quality = Map.empty
+      )
+      val qualityFile = java.nio.file.Paths.get(root, "quality.json")
+      val quality =
+        if (java.nio.file.Files.exists(qualityFile)) {
+          val raw = new com.fasterxml.jackson.databind.ObjectMapper()
+            .readValue(qualityFile.toFile, classOf[java.util.Map[String, Any]])
+          raw.asScala.toMap
+        } else Map.empty[String, Any]
+      Pipeline.writeManifest(root, ingest.copy(uniqueIds = silver.silverRows), silver.copy(quality = quality), gold, spark)
+      client.setXCom(
+        Map[String, Any](
+          "run_root" -> root,
+          "revenue_path" -> gold.revenuePath,
+          "segments_path" -> gold.segmentsPath,
+          "vip_path" -> gold.vipPath,
+          "revenue_rows" -> gold.revenueRows,
+          "segment_rows" -> gold.segmentRows,
+          "orders" -> gold.kpis("orders"),
+          "revenue" -> gold.kpis("revenue"),
+          "vip_revenue_share" -> gold.kpis("vip_revenue_share")
         ).asJava
       )
     } finally spark.stop()

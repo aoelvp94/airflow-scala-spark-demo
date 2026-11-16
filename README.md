@@ -20,7 +20,7 @@ Repo: [aoelvp94/airflow-scala-spark-demo](https://github.com/aoelvp94/airflow-sc
 | JVM in the image | Temurin 17 JRE copied from `eclipse-temurin:17-jre` (multi-stage). The Airflow image has no JRE |
 | Classloader isolation | None. JavaCoordinator puts every jar of the bundle on one flat `-classpath`, so Spark's and the SDK's dependencies share it, hence the Jackson clash. One coordinator plus one Dag bundle per classpath is the isolation unit |
 | spark-daria 1.2.4 on Spark 4.3.0 `local[*]` (`camelCaseToSnakeCaseColumns`, `DariaValidator`, `composeTransforms`, `singleSpace`, `ColumnExt.isTruthy`) | ✅ compiles and runs; unit tests, a 20M-row local bench, and end-to-end on Airflow 3.4 (`scala_spark_daria`, `scala_native_daria`, and bench modes (d1)–(d3) in BENCH.md) |
-| Scala ingest of a paginated HTTP JSON source → Parquet bronze, then a spark-daria bronze-to-silver transform (`scala_spark_ingest_transform`, `scala_native_ingest_transform`) | ✅ both Dags succeeded on Airflow 3.4; unit tests cover a missing-column failure; the same transform is compared with plain Spark and PySpark in BENCH.md |
+| Scala medallion with spark-daria (`scala_spark_medallion`: ingest >> bronze_to_silver >> silver_to_gold) plus an Airflow 3 plugin dashboard | ✅ unit tests, end-to-end on Airflow 3.4, lineage JSON from a Spark 4 `QueryExecutionListener`, dashboard at `/daria-medallion/` |
 
 Versions: Airflow 3.4.0, Task SDK 1.4.0, Java SDK 1.0.0 (Maven Central, 2026-11-13), Scala 2.13.18, sbt 1.13.1, Spark/pyspark 4.3.0, spark-daria 1.2.4, Temurin 17.0.x (Astro image) / Temurin 21.0.13 (local sbt when Docker is down), Astro CLI 1.47.0.
 
@@ -36,9 +36,9 @@ scala-job/                      sbt project (Scala 2.13, Spark 4.3.0, airflow-sd
     NativeDag.scala             Dags declared in Scala with DagDef (`scala_native_spark`, `scala_native_daria`)
     DariaWorkload.scala         spark-daria pipeline and the equivalent plain-Spark path
     DariaBench.scala            local spark-daria vs plain Spark benchmark
-    Pipeline.scala              HTTP ingest to Parquet bronze, spark-daria / plain silver transform
-    PipelineBench.scala         local bench: spark-daria vs plain Spark on the same bronze
-    PipelineInspect.scala       print bronze/silver samples and the missing-column error
+    Pipeline.scala              HTTP ingest, spark-daria bronze→silver, gold aggregates
+    Lineage.scala               Spark 4 QueryExecutionListener writing dataset/column lineage JSON
+    PipelineInspect.scala       print bronze/silver/gold samples and the missing-column error
     Main.scala                  Bundle registration, BundleMain (Server), SubmitApp (spark-submit entry)
   src/main/resources/log4j2.xml AirflowAppender routing
   src/test/scala/...            ScalaTest coverage for the spark-daria path and the ingest/transform pipeline
@@ -47,7 +47,8 @@ astro/                          Astro CLI project
   requirements.txt              pyspark==4.3.0, apache-airflow-providers-apache-spark
   .env                          [sdk] coordinators / queue_to_coordinator, dag bundles, spark_local connection
   docker-compose.override.yml   host networking on this box (bridge traffic is blocked here), ports 56432/58280
-  dags/                         scala_spark_stub_etl.py, scala_spark_daria.py, scala_spark_ingest_transform.py, scala_sdk_xcom_ergonomics.py, bench_dags.py
+  dags/                         scala_spark_medallion.py, scala_spark_stub_etl.py, scala_spark_daria.py, scala_sdk_xcom_ergonomics.py, bench_dags.py
+  plugins/daria_medallion_plugin.py  Airflow 3 FastAPI + external_views dashboard
   include/scala-bundle/         thin bundle (197 jars, includes spark-daria 1.2.4) = Dag bundle "scala-spark"
   include/spark-submit/         scala-spark-workload.jar plus spark-daria_2.13-1.2.4.jar (Spark provided)
 bench/af.py, bench/bench.py, bench/make_bench_md.py
@@ -76,25 +77,73 @@ Through Airflow (fresh JVM per task, 7 rounds, median queued→end): spark-daria
 ./sbt.sh -batch 'runMain example.scalaspark.DariaBench ../bench/daria-local.json'
 ```
 
-## Ingest and transform
+## Medallion pipeline
 
-`scala_spark_ingest_transform` and the native `scala_native_ingest_transform` Dag are a small bronze/silver pipeline, not a microbenchmark.
+The demo is a medallion lakehouse in Scala, orchestrated by Airflow 3.4's Java SDK. spark-daria is used as a DataFrame library for validation and transformation, not as something to benchmark. Earlier aggregate benches in `BENCH.md` are left in place and are not extended.
 
-1. **Ingest** starts a process-local paginated HTTP JSON API (JDK `HttpServer` on `127.0.0.1`), walks every page, and writes the raw records as Parquet bronze. The source is deterministic and messy on purpose: mixed-case and spaced column names (`OrderID`, `Customer Name`, `AMOUNT_USD`, …), string-typed amounts and dates, nulls, and exact duplicates (5%).
-2. **Transform** uses spark-daria 1.2.4: `validatePresenceOfColumns` on the bronze names, `snakifyColumns` plus `snakeCaseColumns`, then `composeTransforms` to trim, parse and cast, `dropDuplicates("order_id")`, and `validateSchema` on the silver types. A missing bronze column fails with `MissingDataFrameColumnsException`.
+```mermaid
+flowchart LR
+  API[Paginated HTTP JSON API] --> Ingest[ingest]
+  Ingest --> Bronze[(bronze Parquet)]
+  Bronze --> SilverTx[bronze_to_silver]
+  SilverTx --> Silver[(silver Parquet)]
+  Silver --> GoldTx[silver_to_gold]
+  GoldTx --> G1[(gold / revenue by country and month)]
+  GoldTx --> G2[(gold / customer segments)]
+  GoldTx --> G3[(gold / VIP metrics)]
+  Ingest --> Lin[lineage JSON]
+  SilverTx --> Lin
+  GoldTx --> Lin
+  Lin --> Dash[Airflow plugin /daria-medallion/]
+```
 
-The same transform is implemented in plain Spark Scala and in PySpark. A local bench on a shared 210,000-row bronze snapshot (200,000 unique ids) compares correctness and timing; see `BENCH.md`.
+`scala_spark_medallion` and the native `scala_native_medallion` Dag run `ingest >> bronze_to_silver >> silver_to_gold`.
 
-Bronze and silver land in `astro/include/pipeline/` so both tasks share a bind-mounted path. That directory is owned by the host user, while Airflow runs as uid 50000, so it has to be world-writable. `build-bundle.sh` runs `mkdir -p astro/include/pipeline && chmod 777 astro/include/pipeline`.
+1. **Ingest** starts a process-local paginated HTTP JSON API (JDK `HttpServer` on `127.0.0.1`) and writes raw records as Parquet bronze. The source is deterministic and messy: mixed-case names, string-typed amounts and dates, nulls, exact duplicates, a nested `Address` struct and a `LineItems` array that contains null entries.
+2. **Bronze to silver** uses spark-daria 1.2.4:
+   - `DariaValidator.validatePresenceOfColumns`, `validateAbsenceOfColumns`, `validateSchema`
+   - `DataFrameExt.flattenSchema`, `composeTransforms`, `reorderColumns`, `trans` / `CustomTransform` (with `requiredColumns`), `killDuplicates` (quality metric), `printSchemaInCodeFormat`
+   - `transformations.snakeCaseColumns`, `snakifyColumns`, `multiRegexpReplace`, `sortColumns`, `titleCaseColumns` (shown in tests; silver stays snake_case)
+   - `functions.singleSpace`, `removeAllWhitespace`, `truncate`, `arrayExNull`, `yeardiff`, `bucketFinder` (on gold)
+   - `ColumnExt.isNullOrBlank` for a blank-email flag
+   - `EtlDefinition.process` writes the gold tables
+3. **Silver to gold** builds business aggregates: revenue by country and month, customer spend segments via `bucketFinder`, and VIP metrics (`orders`, `revenue`, `vip_revenue_share`).
+
+`bucketFinder` in 1.2.4 was written against Spark 3.3 and calls `lit()` on Scala `Option` bucket bounds. Spark 4.3 rejects `lit(Some(x))` / `lit(None)`, so the demo passes `null` and boxed doubles, which is what `lit` + `isNull` expects. The inclusive-bound flags also produce a harmless `true == true` warning from Spark 4.
+
+Bronze, silver, gold, `run.json`, `quality.json` and `lineage/` land in `astro/include/pipeline/<run_id>/`. `build-bundle.sh` keeps that directory world-writable so the Airflow user (uid 50000) can write to the bind mount.
 
 ```bash
 ./sbt.sh -batch test
 ./sbt.sh -batch 'runMain example.scalaspark.PipelineInspect'
-PIPELINE_ROWS=200000 ./sbt.sh -batch 'runMain example.scalaspark.PipelineBench ../bench/pipeline-local.json /tmp/pipeline/bench/bronze'
-PIPELINE_BRONZE=/tmp/pipeline/bench/bronze PIPELINE_CHECKSUM=69569679071 \
-  uv run --no-project --with 'pyspark==4.3.0' python bench/pipeline_pyspark.py
 ```
 
+## Lineage
+
+Spark Declarative Pipelines (SDP) in Spark 4.3 can describe a dataset graph, but they are a separate pipeline runner (`spark-pipelines` / Python `pyspark.pipelines`), not a column-lineage tracer for existing DataFrame jobs. Rewriting this medallion as SDP would move execution out of the Airflow Java SDK tasks, so SDP is not used here.
+
+The OpenLineage Spark agent (`io.openlineage:openlineage-spark_2.13`, latest 1.55.0) can emit column-level lineage and has Spark 4 support, but the shaded jar is about 42 MiB, it joins the same flat JavaCoordinator classpath as Spark and `airflow-sdk` (Jackson is already pinned), and Spark 4.3.0 shipped the same day as 1.55.0. This demo does not vendor that agent.
+
+What is used instead is a first-party Spark 4 API: `org.apache.spark.sql.util.QueryExecutionListener`, registered on the session in each task. On a successful write it walks the analyzed logical plan (`InsertIntoHadoopFsRelationCommand`, `LogicalRelation` / `HadoopFsRelation`) and records:
+
+- dataset inputs and outputs (Parquet paths)
+- column-level links by following `ExprId` / `Alias` references back to source attributes
+- a compact `logicalPlan` tree string
+
+Events are written as JSON Lines that follow the shape of an OpenLineage `COMPLETE` run event, including a `columnLineage` array, plus a `summary.json` for the dashboard. That is honest plan-derived lineage, not a full OpenLineage collector.
+
+## Airflow plugin dashboard
+
+Airflow 3.4 plugins no longer use Flask AppBuilder views. This project registers an Airflow 3 plugin (`astro/plugins/daria_medallion_plugin.py`) with:
+
+- `fastapi_apps` at `/daria-medallion/` — a server-rendered HTML dashboard (no React build, no pandas; it reads `run.json` / `quality.json` / lineage summaries, not Parquet)
+- `external_views` with `destination: "nav"`, `url_route: "daria-medallion"`, `nav_top_level: true` — so the page appears in the Airflow UI nav and is embedded in an iframe
+
+The page shows medallion layers (row counts and schemas), daria validation and quality results, a dataset lineage graph with column-level edges, and gold KPIs.
+
+URL: `http://localhost:58280/daria-medallion/` (API / UI port from `docker-compose.override.yml`).
+
+## Coordinator config
 ## Coordinator config (from `astro/.env`)
 
 ```
@@ -110,7 +159,7 @@ AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST=[{"name":"dags-folder",...},{"nam
 ./build-bundle.sh                                   # sbt in Docker, or local sbt if Docker is down → astro/include
 cd astro && astro dev start --no-browser --wait 3m  # UI/API on http://localhost:58280 (override file)
 cd ../bench
-uv run --no-project python af.py scala_spark_stub_etl scala_native_spark scala_spark_daria scala_native_daria scala_spark_ingest_transform scala_native_ingest_transform scala_sdk_xcom_ergonomics
+uv run --no-project python af.py scala_spark_medallion scala_native_medallion scala_spark_stub_etl scala_native_spark scala_spark_daria scala_native_daria scala_sdk_xcom_ergonomics
 BENCH_RUNS=7 BENCH_WARMUP=1 uv run --no-project python bench.py bench.json
 uv run --no-project python make_bench_md.py bench.json
 cd ../astro && astro dev kill                       # teardown (containers + volumes)
