@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <AirflowAppender name="Airflow"/>
+  </Appenders>
+  <Loggers>
+    <Logger name="org.apache.spark" level="warn"/>
+    <Logger name="org.sparkproject" level="warn"/>
+    <Logger name="org.apache.hadoop" level="warn"/>
+    <Logger name="org.apache.parquet" level="warn"/>
+    <Root level="info">
+      <AppenderRef ref="Airflow"/>
+    </Root>
+  </Loggers>
+</Configuration>

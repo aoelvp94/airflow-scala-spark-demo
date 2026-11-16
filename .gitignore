@@ -1,0 +1,14 @@
+ref/
+**/target/
+**/project/target/
+**/project/project/
+.bsp/
+.idea/
+.venv/
+__pycache__/
+*.pyc
+astro/include/scala-bundle/*.jar
+bench/out/
+.env.local
+experiments/**/*.jar
+*.jar
