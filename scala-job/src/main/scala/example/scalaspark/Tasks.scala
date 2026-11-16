@@ -99,3 +99,23 @@ class ReadXComs extends Task {
 class Noop extends Task {
   override def execute(context: Context, client: Client): Unit = client.setXCom(Workload.vmHwmKb())
 }
+
+class SparkDariaWorkload extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[SparkDariaWorkload])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val r = DariaWorkload.run("daria", context.ti.runId)
+    log.info("BENCH_RESULT {}", r.toJson)
+    client.setXCom(r.toJava)
+  }
+}
+
+class SparkPlainWorkload extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[SparkPlainWorkload])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val r = DariaWorkload.run("plain", context.ti.runId)
+    log.info("BENCH_RESULT {}", r.toJson)
+    client.setXCom(r.toJava)
+  }
+}

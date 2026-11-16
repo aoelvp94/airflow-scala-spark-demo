@@ -65,3 +65,32 @@ uv run --no-project python make_bench_md.py bench.json
 ```
 
 Raw per-run data is in `bench.json` (the same file as `bench/bench.json`).
+
+## spark-daria vs plain Spark (local, not via Airflow)
+
+Run on 2026-11-16 at 19:33 (Asia/Tbilisi, UTC+4), on the box, with a single `SparkSession` (`local[*]`, Temurin 21.0.13, Spark 4.3.0, spark-daria 1.2.4). Docker was unavailable, so the Airflow DAG path was not re-run and the numbers above are unchanged.
+
+This compares a spark-daria pipeline with an equivalent plain-Spark pipeline on the same 20,000,000-row source (`userId`, `groupKey`, `orderAmount`, `isActive`, `displayName`). Both paths rename to snake_case, check required / prohibited columns and the schema, apply `singleSpace` on `display_name` and an `isTruthy` flag on `is_active`, then `groupBy(group_key).agg(sum, count)` and write/read Parquet. The checksum is verified in every run (`399999980000000`, the same value as the workload above). 1 warm-up round, then 7 measured rounds interleaved, every figure a median.
+
+The session is reused on purpose: the comparison is library overhead, not JVM or `SparkSession` start (1.69 s once). Do not compare these compute times with the Airflow table above, where each run started a fresh JVM.
+
+| Mode | n | Spark compute (ms) | Driver JVM peak RSS (MiB, process-wide VmHWM) |
+|---|---|---|---|
+| spark-daria 1.2.4 (`camelCaseToSnakeCaseColumns`, `DariaValidator`, `composeTransforms`, `singleSpace`, `isTruthy`) | 7 | 353 (min 321, max 404) | 673 |
+| plain Spark (same renames, checks and expressions) | 7 | 354 (min 297, max 404) | 686 |
+
+## Reading it
+
+- **No meaningful compute difference.** The medians are 353 ms vs 354 ms, inside run-to-run noise. spark-daria 1.2.4 (built for Spark 3.3.4) ran correctly on Spark 4.3.0 for these APIs.
+- **Results match.** Every measured run in both modes returned 20,000,000 rows, 1,000 groups and checksum `399999980000000`.
+- **Memory is not comparable per mode.** Both paths share one JVM, so `VmHWM` only rises. The figures are the process peak after that mode's measured rounds, not an isolated working set.
+- **The first warm-up of the daria path took 5.2 s**, then 0.57 s for the first plain run, then 0.3–0.4 s once Spark was hot. That cold start is excluded from the medians.
+
+## Reproduce
+
+```bash
+./sbt.sh -batch test
+./sbt.sh -batch 'runMain example.scalaspark.DariaBench ../bench/daria-local.json'
+```
+
+`sbt.sh` uses Docker when it is available, or a local JDK and sbt if it is not. Raw data is in `bench/daria-local.json` and in the `daria_local` key of `bench.json`.

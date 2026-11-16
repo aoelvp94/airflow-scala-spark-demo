@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss} %-5p %c{1} - %m%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="org.apache.spark" level="warn"/>
+    <Logger name="org.sparkproject" level="warn"/>
+    <Logger name="org.apache.hadoop" level="warn"/>
+    <Logger name="org.apache.parquet" level="warn"/>
+    <Root level="warn">
+      <AppenderRef ref="Console"/>
+    </Root>
+  </Loggers>
+</Configuration>

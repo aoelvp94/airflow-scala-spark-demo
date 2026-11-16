@@ -17,7 +17,10 @@ object ScalaBundle {
       .register("scala_sdk_xcom_ergonomics", "push_big_decimal", classOf[PushBigDecimal])
       .register("scala_sdk_xcom_ergonomics", "read_xcoms", classOf[ReadXComs])
       .register("bench_noop", "scala_noop", classOf[Noop])
+      .register("scala_spark_daria", "daria", classOf[SparkDariaWorkload])
+      .register("scala_spark_daria", "plain", classOf[SparkPlainWorkload])
       .register(NativeDag.build())
+      .register(DariaNativeDag.build())
 }
 
 object BundleMain {
@@ -28,6 +31,10 @@ object SubmitApp {
   def main(args: Array[String]): Unit = {
     val mode = args.headOption.getOrElse("spark_submit")
     val runId = args.lift(1).getOrElse("manual")
-    println(s"BENCH_RESULT ${Workload.run(mode, runId).toJson}")
+    val result = mode match {
+      case "daria" | "plain" => DariaWorkload.run(mode, runId)
+      case _                 => Workload.run(mode, runId)
+    }
+    println(s"BENCH_RESULT ${result.toJson}")
   }
 }

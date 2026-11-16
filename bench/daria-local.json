@@ -1,0 +1,217 @@
+{
+  "warmup": [
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "warmup-0",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 543624,
+      "compute_ms": 5242,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "warmup-0",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 572272,
+      "compute_ms": 567,
+      "rows": 20000000
+    }
+  ],
+  "spark_session_start_ms": 1693,
+  "warmup_per_mode": 1,
+  "host": {
+    "nproc": 8,
+    "loadavg_end": [
+      2.53,
+      1.53,
+      0.86
+    ]
+  },
+  "runs": [
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-1",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 591944,
+      "compute_ms": 404,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-1",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 617480,
+      "compute_ms": 404,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-2",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 630780,
+      "compute_ms": 375,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-2",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 646712,
+      "compute_ms": 396,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-3",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 657456,
+      "compute_ms": 367,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-3",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 673384,
+      "compute_ms": 388,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-4",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 689092,
+      "compute_ms": 341,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-4",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 702816,
+      "compute_ms": 337,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-5",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 715216,
+      "compute_ms": 353,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-5",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 717560,
+      "compute_ms": 322,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-6",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 729632,
+      "compute_ms": 343,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-6",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 736072,
+      "compute_ms": 297,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-7",
+      "checksum": 399999980000000,
+      "mode": "daria",
+      "jvm_hwm_kb": 738088,
+      "compute_ms": 321,
+      "rows": 20000000
+    },
+    {
+      "state": "success",
+      "groups": 1000,
+      "run_id": "bench-7",
+      "checksum": 399999980000000,
+      "mode": "plain",
+      "jvm_hwm_kb": 747212,
+      "compute_ms": 354,
+      "rows": 20000000
+    }
+  ],
+  "runs_per_mode": 7,
+  "java": "21.0.13",
+  "spark_daria": "1.2.4",
+  "rows": 20000000,
+  "summary": {
+    "daria": {
+      "n": 7,
+      "groups": 1000,
+      "checksum": 399999980000000,
+      "jvm_hwm_kb": {
+        "median": 689092,
+        "min": 591944,
+        "max": 738088
+      },
+      "compute_ms": {
+        "median": 353,
+        "min": 321,
+        "max": 404
+      },
+      "rows": 20000000
+    },
+    "plain": {
+      "n": 7,
+      "groups": 1000,
+      "checksum": 399999980000000,
+      "jvm_hwm_kb": {
+        "median": 702816,
+        "min": 617480,
+        "max": 747212
+      },
+      "compute_ms": {
+        "median": 354,
+        "min": 297,
+        "max": 404
+      },
+      "rows": 20000000
+    }
+  },
+  "spark": "4.3.0 local[*]",
+  "generated_at": "2026-11-16T19:33:34+0400",
+  "note": "Local Spark on the box; Airflow DAG path not re-run (Docker unavailable)."
+}

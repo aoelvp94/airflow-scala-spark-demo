@@ -28,3 +28,28 @@ object NativeDag {
     dag
   }
 }
+
+class CheckDariaWorkload extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[CheckDariaWorkload])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val m = client.getXCom("daria").asInstanceOf[java.util.Map[String, Any]].asScala
+    log.info("Native Scala daria Dag got {}", m)
+    require(m("groups").asInstanceOf[Number].longValue() == 1000L)
+    require(m("rows").asInstanceOf[Number].longValue() == Workload.Rows)
+  }
+}
+
+object DariaNativeDag {
+  def build(): DagDef = {
+    val dag = new DagDef("scala_native_daria")
+      .config("description", "Native Scala Dag that validates and transforms a Spark DataFrame with spark-daria")
+      .config("queue", "scala")
+      .config("catchup", false)
+      .config("tags", Seq("scala", "spark", "daria", "native").asJava)
+    val daria = dag.task("daria", classOf[SparkDariaWorkload])
+    val check = dag.task("check", classOf[CheckDariaWorkload])
+    check.after(daria)
+    dag
+  }
+}

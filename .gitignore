@@ -12,3 +12,4 @@ bench/out/
 .env.local
 experiments/**/*.jar
 *.jar
+.cache/

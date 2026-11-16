@@ -1,6 +1,6 @@
 # Scala + Spark on Airflow's Java SDK, inside an Astro CLI project
 
-Local-only experiment (box path `/workspace/airflow-scala-spark-astro`, nothing pushed). The question: can Airflow 3.4's JVM language SDK (`org.apache.airflow:airflow-sdk`, JavaCoordinator) run a Scala project that drives Spark, packaged in an Astro CLI project? The answer is yes, with workarounds. See `ISSUES.md` for the changes that should go upstream and `BENCH.md` for the numbers.
+Repo: [aoelvp94/airflow-scala-spark-demo](https://github.com/aoelvp94/airflow-scala-spark-demo). The question: can Airflow 3.4's JVM language SDK (`org.apache.airflow:airflow-sdk`, JavaCoordinator) run a Scala project that drives Spark, packaged in an Astro CLI project? The answer is yes, with workarounds. See `ISSUES.md` for the changes that should go upstream and `BENCH.md` for the numbers.
 
 ## What was tested
 
@@ -19,8 +19,9 @@ Local-only experiment (box path `/workspace/airflow-scala-spark-astro`, nothing 
 | `astro dev start` with `apache/airflow:3.4.0-python3.12` | ⚠️ needs 3 Dockerfile workarounds (ISSUES.md #4). Astro Runtime 3.3-12 is Airflow 3.3, so it is not usable for the Java SDK 1.0.0 |
 | JVM in the image | Temurin 17 JRE copied from `eclipse-temurin:17-jre` (multi-stage). The Airflow image has no JRE |
 | Classloader isolation | None. JavaCoordinator puts every jar of the bundle on one flat `-classpath`, so Spark's and the SDK's dependencies share it, hence the Jackson clash. One coordinator plus one Dag bundle per classpath is the isolation unit |
+| spark-daria 1.2.4 on Spark 4.3.0 `local[*]` (`camelCaseToSnakeCaseColumns`, `DariaValidator`, `composeTransforms`, `singleSpace`, `ColumnExt.isTruthy`) | ✅ compiles and runs; unit tests and a 20M-row local bench against an equivalent plain-Spark path (BENCH.md) |
 
-Versions: Airflow 3.4.0, Task SDK 1.4.0, Java SDK 1.0.0 (Maven Central, 2026-11-13), Scala 2.13.18, sbt 1.13.1, Spark/pyspark 4.3.0, Temurin 17.0.x, Astro CLI 1.47.0.
+Versions: Airflow 3.4.0, Task SDK 1.4.0, Java SDK 1.0.0 (Maven Central, 2026-11-13), Scala 2.13.18, sbt 1.13.1, Spark/pyspark 4.3.0, spark-daria 1.2.4, Temurin 17.0.x (Astro image) / Temurin 21.0.13 (local sbt when Docker is down), Astro CLI 1.47.0.
 
 ## Layout
 
@@ -30,25 +31,43 @@ scala-job/                      sbt project (Scala 2.13, Spark 4.3.0, airflow-sd
                                 JACKSON_ALIGN=up|down|none, LOG4J_ALIGN, SPARK_VERSION env switches
   src/main/scala/example/scalaspark/
     Workload.scala              shared Spark workload + result file /tmp/bench_results/<mode>/<run_id>.json
-    Tasks.scala                 Task classes (bench, stub ETL, XCom ergonomics, no-op)
-    NativeDag.scala             Dag declared in Scala with DagDef
+    Tasks.scala                 Task classes (bench, stub ETL, XCom ergonomics, no-op, spark-daria / plain)
+    NativeDag.scala             Dags declared in Scala with DagDef (`scala_native_spark`, `scala_native_daria`)
+    DariaWorkload.scala         spark-daria pipeline and the equivalent plain-Spark path
+    DariaBench.scala            local spark-daria vs plain Spark benchmark
     Main.scala                  Bundle registration, BundleMain (Server), SubmitApp (spark-submit entry)
   src/main/resources/log4j2.xml AirflowAppender routing
+  src/test/scala/...            ScalaTest coverage for the spark-daria path on Spark 4.3
 astro/                          Astro CLI project
   Dockerfile                    apache/airflow:3.4.0-python3.12 + Temurin 17 JRE + Astro workarounds
   requirements.txt              pyspark==4.3.0, apache-airflow-providers-apache-spark
   .env                          [sdk] coordinators / queue_to_coordinator, dag bundles, spark_local connection
   docker-compose.override.yml   host networking on this box (bridge traffic is blocked here), ports 56432/58280
-  dags/                         scala_spark_stub_etl.py, scala_sdk_xcom_ergonomics.py, bench_dags.py
-  include/scala-bundle/         thin bundle (196 jars, 289 MB) = Dag bundle "scala-spark"
-  include/spark-submit/         scala-spark-workload.jar (48 KB, Spark provided)
+  dags/                         scala_spark_stub_etl.py, scala_spark_daria.py, scala_sdk_xcom_ergonomics.py, bench_dags.py
+  include/scala-bundle/         thin bundle (197 jars, includes spark-daria 1.2.4) = Dag bundle "scala-spark"
+  include/spark-submit/         scala-spark-workload.jar plus spark-daria_2.13-1.2.4.jar (Spark provided)
 bench/af.py, bench/bench.py, bench/make_bench_md.py
 BENCH.md, bench.json            benchmark
 ISSUES.md                       paste-ready issue drafts (not posted)
 experiments/                    sbt variants (Spark 3.5.9/4.3.0 × Jackson alignment, fat jar), upstream Gradle resolution check
 ref/                            read-only clones of aoelvp94/airflow-java-dag-demo, aoelvp94/airflow-go-dag-demo + upstream files
 spark-jvm-opts.txt              Spark 4.3.0 JavaModuleOptions, used as coordinator jvm_args
-sbt.sh, build-bundle.sh         sbt in Docker (no local JDK needed), copy bundle into astro/include
+sbt.sh, build-bundle.sh         sbt in Docker, or a local JDK + sbt if Docker is down; copy bundle into astro/include
+```
+
+## spark-daria
+
+The Scala job uses [spark-daria](https://github.com/mrpowers-io/spark-daria) 1.2.4 (`com.github.mrpowers:spark-daria_2.13`), the latest release on Maven Central (2026-10-01). It was published against Spark 3.3.4 (provided), but the helpers used here run on Spark 4.3.0: `camelCaseToSnakeCaseColumns`, `validatePresenceOfColumns` / `validateSchema` / `validateAbsenceOfColumns`, `composeTransforms`, `singleSpace`, and `ColumnExt.isTruthy`.
+
+`SparkDariaWorkload` and an equivalent plain-Spark task (`SparkPlainWorkload`) are registered on the Python stub Dag `scala_spark_daria` and on the native `scala_native_daria` Dag. spark-daria is a compile/runtime dependency, not `provided`, so the thin bundle and the spark-submit folder both ship `spark-daria_2.13-1.2.4.jar`. Spark itself stays out of the submit jar; the Java SDK path still ships Spark inside the bundle. Jackson stays on 2.22.2 and Log4j on 2.26.1; spark-daria did not pull Spark 3.3 or an older `jackson-module-scala`.
+
+A dedicated Airflow `SparkDariaOperator` would be overkill. spark-daria is a DataFrame library, not a runtime, so the right unit is a `Task` that already opens a `SparkSession`.
+
+Local benchmark, same 20M-row workload, one shared `local[*]` session, 1 warm-up + 7 measured rounds, median: spark-daria 353 ms vs plain Spark 354 ms, identical checksum. See `BENCH.md`. Docker was down, so the Airflow DAG path was not re-run.
+
+```bash
+./sbt.sh -batch test
+./sbt.sh -batch 'runMain example.scalaspark.DariaBench ../bench/daria-local.json'
 ```
 
 ## Coordinator config (from `astro/.env`)
@@ -62,10 +81,11 @@ AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST=[{"name":"dags-folder",...},{"nam
 ## Commands
 
 ```bash
-./build-bundle.sh                                   # sbt in Docker → astro/include/scala-bundle + spark-submit jar
+./sbt.sh -batch test                                # includes the spark-daria tests (Docker or local sbt)
+./build-bundle.sh                                   # sbt in Docker, or local sbt if Docker is down → astro/include
 cd astro && astro dev start --no-browser --wait 3m  # UI/API on http://localhost:58280 (override file)
 cd ../bench
-uv run --no-project python af.py scala_spark_stub_etl scala_native_spark scala_sdk_xcom_ergonomics
+uv run --no-project python af.py scala_spark_stub_etl scala_native_spark scala_spark_daria scala_native_daria scala_sdk_xcom_ergonomics
 BENCH_RUNS=7 BENCH_WARMUP=1 uv run --no-project python bench.py bench.json
 uv run --no-project python make_bench_md.py bench.json
 cd ../astro && astro dev kill                       # teardown (containers + volumes)

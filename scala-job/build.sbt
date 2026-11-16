@@ -23,6 +23,11 @@ val log4jOverrides =
   else Seq("log4j-api", "log4j-core", "log4j-1.2-api", "log4j-slf4j2-impl", "log4j-layout-template-json")
     .map("org.apache.logging.log4j" % _ % log4jAlign)
 
+def sparkJavaOptsFrom(base: File): Seq[String] = {
+  val f = base.getParentFile / "spark-jvm-opts.txt"
+  if (f.exists) IO.readLines(f).map(_.trim).filter(_.nonEmpty) else Seq.empty
+}
+
 lazy val root = (project in file("."))
   .settings(
     name := "scala-spark-airflow",
@@ -31,8 +36,15 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "org.apache.airflow" % "airflow-sdk" % airflowSdkVersion,
       "org.apache.airflow" % "airflow-sdk-log4j2" % airflowSdkVersion,
-      "org.apache.spark" %% "spark-sql" % sparkVersion
+      "org.apache.spark" %% "spark-sql" % sparkVersion,
+      "com.github.mrpowers" %% "spark-daria" % "1.2.4",
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test
     ),
+    Test / fork := true,
+    Test / parallelExecution := false,
+    Test / javaOptions ++= sparkJavaOptsFrom(baseDirectory.value) ++ Seq("-Xmx1g"),
+    run / fork := true,
+    run / javaOptions ++= sparkJavaOptsFrom(baseDirectory.value) ++ Seq("-Xmx1g"),
     dependencyOverrides ++= jacksonOverrides ++ log4jOverrides,
     Compile / mainClass := Some(bundleMainClass),
     Compile / packageBin / packageOptions +=
@@ -54,6 +66,10 @@ lazy val root = (project in file("."))
       IO.createDirectory(out)
       val app = (Compile / packageBin).value
       IO.copyFile(app, out / "scala-spark-workload.jar")
+      (Runtime / fullClasspathAsJars).value
+        .map(_.data)
+        .filter(j => j.getName.startsWith("spark-daria"))
+        .foreach(j => IO.copyFile(j, out / j.getName))
       out
     },
     assembly / mainClass := Some(bundleMainClass),
@@ -72,4 +88,4 @@ lazy val root = (project in file("."))
   )
 
 lazy val bundle = taskKey[File]("Thin Airflow bundle: app jar plus every runtime jar in target/bundle")
-lazy val submitJar = taskKey[File]("App jar only, for spark-submit with Spark provided")
+lazy val submitJar = taskKey[File]("App jar plus spark-daria, for spark-submit with Spark provided")
