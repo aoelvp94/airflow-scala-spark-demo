@@ -1,247 +1,379 @@
-{"mode": "java_sdk", "run_id": "warmup__bench_scala_java_sdk__150927_34662", "state": "success", "ti_duration_s": 7.598596, "queued_to_start_s": 1.136, "queued_to_end_s": 8.734, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1949, "compute_ms": 4752, "jvm_hwm_kb": 529564}
-{"mode": "spark_submit_bash", "run_id": "warmup__bench_spark_submit_bash__150938_99262", "state": "success", "ti_duration_s": 8.28616, "queued_to_start_s": 0.119, "queued_to_end_s": 8.405, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2369, "compute_ms": 3556, "jvm_hwm_kb": 575508}
-{"mode": "spark_submit_operator", "run_id": "warmup__bench_spark_submit_operator__150948_26318", "state": "success", "ti_duration_s": 7.286183, "queued_to_start_s": 0.106, "queued_to_end_s": 7.392, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2037, "compute_ms": 3554, "jvm_hwm_kb": 538944}
-{"mode": "pyspark_task", "run_id": "warmup__bench_pyspark_task__150956_53294", "state": "success", "ti_duration_s": 7.537546, "queued_to_start_s": 0.103, "queued_to_end_s": 7.641, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3515, "compute_ms": 3107, "jvm_hwm_kb": 504088, "python_hwm_kb": 336888}
-{"mode": "noop_python", "run_id": "warmup__bench_noop__151005_15659", "state": "success", "ti_duration_s": 0.578261, "queued_to_start_s": 0.104, "queued_to_end_s": 0.683, "hwm_kb": 247880}
-{"mode": "noop_scala_java_sdk", "run_id": "warmup__bench_noop__151009_34831", "state": "success", "ti_duration_s": 0.285661, "queued_to_start_s": 0.636, "queued_to_end_s": 0.922, "hwm_kb": 130724}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151012_88279", "state": "success", "ti_duration_s": 5.729072, "queued_to_start_s": 0.689, "queued_to_end_s": 6.418, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1161, "compute_ms": 4074, "jvm_hwm_kb": 501484}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151020_53637", "state": "success", "ti_duration_s": 7.069658, "queued_to_start_s": 0.106, "queued_to_end_s": 7.175, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2037, "compute_ms": 3219, "jvm_hwm_kb": 511948}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151029_94251", "state": "success", "ti_duration_s": 8.169059, "queued_to_start_s": 0.102, "queued_to_end_s": 8.271, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2074, "compute_ms": 4308, "jvm_hwm_kb": 555140}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151039_24917", "state": "success", "ti_duration_s": 10.650234, "queued_to_start_s": 0.114, "queued_to_end_s": 10.764, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4312, "compute_ms": 5169, "jvm_hwm_kb": 509540, "python_hwm_kb": 333264}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151052_73842", "state": "success", "ti_duration_s": 0.749109, "queued_to_start_s": 0.114, "queued_to_end_s": 0.863, "hwm_kb": 247088}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151056_1197", "state": "success", "ti_duration_s": 0.279008, "queued_to_start_s": 0.489, "queued_to_end_s": 0.768, "hwm_kb": 117216}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151059_46110", "state": "success", "ti_duration_s": 6.296353, "queued_to_start_s": 0.483, "queued_to_end_s": 6.779, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1347, "compute_ms": 4397, "jvm_hwm_kb": 536936}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151107_89801", "state": "success", "ti_duration_s": 7.284454, "queued_to_start_s": 0.011, "queued_to_end_s": 7.296, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2105, "compute_ms": 3301, "jvm_hwm_kb": 528876}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151117_20226", "state": "success", "ti_duration_s": 6.972307, "queued_to_start_s": 0.01, "queued_to_end_s": 6.982, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1918, "compute_ms": 3318, "jvm_hwm_kb": 514292}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151126_66734", "state": "success", "ti_duration_s": 7.374018, "queued_to_start_s": 0.01, "queued_to_end_s": 7.384, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3283, "compute_ms": 3149, "jvm_hwm_kb": 505348, "python_hwm_kb": 340144}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151135_27257", "state": "success", "ti_duration_s": 0.550084, "queued_to_start_s": 0.01, "queued_to_end_s": 0.561, "hwm_kb": 251136}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151139_96021", "state": "success", "ti_duration_s": 0.264493, "queued_to_start_s": 0.468, "queued_to_end_s": 0.732, "hwm_kb": 144300}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151142_73551", "state": "success", "ti_duration_s": 5.221163, "queued_to_start_s": 0.487, "queued_to_end_s": 5.708, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1140, "compute_ms": 3620, "jvm_hwm_kb": 544556}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151151_9888", "state": "success", "ti_duration_s": 6.926942, "queued_to_start_s": 0.011, "queued_to_end_s": 6.938, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1929, "compute_ms": 3199, "jvm_hwm_kb": 608784}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151159_56176", "state": "success", "ti_duration_s": 6.948247, "queued_to_start_s": 0.009, "queued_to_end_s": 6.958, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1901, "compute_ms": 3233, "jvm_hwm_kb": 530820}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151208_70367", "state": "success", "ti_duration_s": 7.275598, "queued_to_start_s": 0.01, "queued_to_end_s": 7.285, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3295, "compute_ms": 3208, "jvm_hwm_kb": 492252, "python_hwm_kb": 340680}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151216_76312", "state": "success", "ti_duration_s": 0.541084, "queued_to_start_s": 0.011, "queued_to_end_s": 0.552, "hwm_kb": 251140}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151219_83408", "state": "success", "ti_duration_s": 0.27565, "queued_to_start_s": 0.56, "queued_to_end_s": 0.836, "hwm_kb": 144396}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151223_26071", "state": "success", "ti_duration_s": 5.36425, "queued_to_start_s": 0.486, "queued_to_end_s": 5.85, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1087, "compute_ms": 3823, "jvm_hwm_kb": 464116}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151231_36199", "state": "success", "ti_duration_s": 6.820315, "queued_to_start_s": 0.01, "queued_to_end_s": 6.83, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1939, "compute_ms": 3153, "jvm_hwm_kb": 509628}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151240_31705", "state": "success", "ti_duration_s": 6.70247, "queued_to_start_s": 0.009, "queued_to_end_s": 6.712, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1908, "compute_ms": 3155, "jvm_hwm_kb": 552984}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151247_95794", "state": "success", "ti_duration_s": 7.264742, "queued_to_start_s": 0.009, "queued_to_end_s": 7.274, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3265, "compute_ms": 3193, "jvm_hwm_kb": 510016, "python_hwm_kb": 337484}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151257_86817", "state": "success", "ti_duration_s": 0.534646, "queued_to_start_s": 0.01, "queued_to_end_s": 0.544, "hwm_kb": 247868}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151300_28320", "state": "success", "ti_duration_s": 0.257569, "queued_to_start_s": 0.482, "queued_to_end_s": 0.739, "hwm_kb": 127900}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151304_64298", "state": "success", "ti_duration_s": 5.225636, "queued_to_start_s": 0.516, "queued_to_end_s": 5.742, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1079, "compute_ms": 3678, "jvm_hwm_kb": 500764}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151311_66994", "state": "success", "ti_duration_s": 6.659351, "queued_to_start_s": 0.01, "queued_to_end_s": 6.669, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1854, "compute_ms": 3134, "jvm_hwm_kb": 540048}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151318_35107", "state": "success", "ti_duration_s": 6.545975, "queued_to_start_s": 0.011, "queued_to_end_s": 6.557, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1833, "compute_ms": 3062, "jvm_hwm_kb": 538192}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151328_75526", "state": "success", "ti_duration_s": 7.151344, "queued_to_start_s": 0.009, "queued_to_end_s": 7.16, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3187, "compute_ms": 3108, "jvm_hwm_kb": 549080, "python_hwm_kb": 337292}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151336_4490", "state": "success", "ti_duration_s": 0.546011, "queued_to_start_s": 0.01, "queued_to_end_s": 0.556, "hwm_kb": 247876}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151340_95420", "state": "success", "ti_duration_s": 0.280662, "queued_to_start_s": 0.47, "queued_to_end_s": 0.75, "hwm_kb": 141812}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151343_834", "state": "success", "ti_duration_s": 5.129756, "queued_to_start_s": 0.497, "queued_to_end_s": 5.627, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1052, "compute_ms": 3597, "jvm_hwm_kb": 538468}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151351_11418", "state": "success", "ti_duration_s": 8.828805, "queued_to_start_s": 0.009, "queued_to_end_s": 8.838, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2163, "compute_ms": 4443, "jvm_hwm_kb": 549208}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151402_18027", "state": "success", "ti_duration_s": 9.69932, "queued_to_start_s": 0.012, "queued_to_end_s": 9.711, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3201, "compute_ms": 4179, "jvm_hwm_kb": 528872}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151413_88766", "state": "success", "ti_duration_s": 9.728921, "queued_to_start_s": 0.014, "queued_to_end_s": 9.743, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4537, "compute_ms": 3915, "jvm_hwm_kb": 605356, "python_hwm_kb": 339712}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151424_52792", "state": "success", "ti_duration_s": 0.60473, "queued_to_start_s": 0.011, "queued_to_end_s": 0.616, "hwm_kb": 251216}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151427_34014", "state": "success", "ti_duration_s": 0.269911, "queued_to_start_s": 0.531, "queued_to_end_s": 0.801, "hwm_kb": 129528}
-{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__151432_7934", "state": "success", "ti_duration_s": 5.728485, "queued_to_start_s": 0.482, "queued_to_end_s": 6.21, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1193, "compute_ms": 4045, "jvm_hwm_kb": 527068}
-{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__151439_58227", "state": "success", "ti_duration_s": 6.950326, "queued_to_start_s": 0.009, "queued_to_end_s": 6.959, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1910, "compute_ms": 3077, "jvm_hwm_kb": 563732}
-{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__151448_80843", "state": "success", "ti_duration_s": 6.895478, "queued_to_start_s": 0.009, "queued_to_end_s": 6.904, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1950, "compute_ms": 3289, "jvm_hwm_kb": 523600}
-{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__151456_92736", "state": "success", "ti_duration_s": 7.833517, "queued_to_start_s": 0.009, "queued_to_end_s": 7.842, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3443, "compute_ms": 3372, "jvm_hwm_kb": 517564, "python_hwm_kb": 340088}
-{"mode": "noop_python", "run_id": "bench__bench_noop__151506_70741", "state": "success", "ti_duration_s": 0.539176, "queued_to_start_s": 0.009, "queued_to_end_s": 0.549, "hwm_kb": 251300}
-{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__151511_54243", "state": "success", "ti_duration_s": 0.26411, "queued_to_start_s": 0.493, "queued_to_end_s": 0.758, "hwm_kb": 130084}
+{"mode": "java_sdk", "run_id": "warmup__bench_scala_java_sdk__195614_99826", "state": "success", "ti_duration_s": 6.819398, "queued_to_start_s": 0.886, "queued_to_end_s": 7.705, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1385, "compute_ms": 4792, "jvm_hwm_kb": 539592}
+{"mode": "spark_submit_bash", "run_id": "warmup__bench_spark_submit_bash__195623_54678", "state": "success", "ti_duration_s": 9.571117, "queued_to_start_s": 0.14, "queued_to_end_s": 9.711, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2902, "compute_ms": 4299, "jvm_hwm_kb": 515212}
+{"mode": "spark_submit_operator", "run_id": "warmup__bench_spark_submit_operator__195635_2173", "state": "success", "ti_duration_s": 9.280389, "queued_to_start_s": 0.218, "queued_to_end_s": 9.499, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2643, "compute_ms": 4207, "jvm_hwm_kb": 580008}
+{"mode": "pyspark_task", "run_id": "warmup__bench_pyspark_task__195646_43968", "state": "success", "ti_duration_s": 11.579681, "queued_to_start_s": 0.133, "queued_to_end_s": 11.712, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 6159, "compute_ms": 4002, "jvm_hwm_kb": 486460, "python_hwm_kb": 352828}
+{"mode": "java_sdk_daria", "run_id": "warmup__bench_scala_daria_java_sdk__195659_46873", "state": "success", "ti_duration_s": 7.904032, "queued_to_start_s": 0.975, "queued_to_end_s": 8.879, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1379, "compute_ms": 5831, "jvm_hwm_kb": 686016}
+{"mode": "java_sdk_plain", "run_id": "warmup__bench_scala_plain_java_sdk__195710_75903", "state": "success", "ti_duration_s": 6.941827, "queued_to_start_s": 0.783, "queued_to_end_s": 7.725, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1334, "compute_ms": 4964, "jvm_hwm_kb": 493348}
+{"mode": "spark_submit_daria", "run_id": "warmup__bench_spark_submit_daria__195718_62578", "state": "success", "ti_duration_s": 9.077552, "queued_to_start_s": 0.128, "queued_to_end_s": 9.206, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2296, "compute_ms": 4361, "jvm_hwm_kb": 521388}
+{"mode": "noop_python", "run_id": "warmup__bench_noop__195729_93206", "state": "success", "ti_duration_s": 0.806478, "queued_to_start_s": 0.155, "queued_to_end_s": 0.962, "hwm_kb": 248764}
+{"mode": "noop_scala_java_sdk", "run_id": "warmup__bench_noop__195734_32298", "state": "success", "ti_duration_s": 0.356504, "queued_to_start_s": 0.884, "queued_to_end_s": 1.241, "hwm_kb": 127624}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__195738_89315", "state": "success", "ti_duration_s": 6.792606, "queued_to_start_s": 0.892, "queued_to_end_s": 7.684, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1374, "compute_ms": 4832, "jvm_hwm_kb": 548760}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__195747_32645", "state": "success", "ti_duration_s": 8.343421, "queued_to_start_s": 0.13, "queued_to_end_s": 8.473, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2364, "compute_ms": 3933, "jvm_hwm_kb": 516240}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__195757_34622", "state": "success", "ti_duration_s": 8.562657, "queued_to_start_s": 0.127, "queued_to_end_s": 8.69, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2429, "compute_ms": 3920, "jvm_hwm_kb": 516544}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__195808_87996", "state": "success", "ti_duration_s": 9.229745, "queued_to_start_s": 0.018, "queued_to_end_s": 9.248, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3962, "compute_ms": 3779, "jvm_hwm_kb": 501992, "python_hwm_kb": 342716}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__195819_95100", "state": "success", "ti_duration_s": 7.231445, "queued_to_start_s": 0.935, "queued_to_end_s": 8.167, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1323, "compute_ms": 5260, "jvm_hwm_kb": 543508}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__195828_99105", "state": "success", "ti_duration_s": 6.389141, "queued_to_start_s": 0.598, "queued_to_end_s": 6.987, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1271, "compute_ms": 4522, "jvm_hwm_kb": 526324}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__195838_39770", "state": "success", "ti_duration_s": 8.573931, "queued_to_start_s": 0.016, "queued_to_end_s": 8.59, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2165, "compute_ms": 4053, "jvm_hwm_kb": 596560}
+{"mode": "noop_python", "run_id": "bench__bench_noop__195847_43007", "state": "success", "ti_duration_s": 0.765819, "queued_to_start_s": 0.022, "queued_to_end_s": 0.788, "hwm_kb": 252300}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__195852_99124", "state": "success", "ti_duration_s": 0.335386, "queued_to_start_s": 0.616, "queued_to_end_s": 0.951, "hwm_kb": 142244}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__195855_44678", "state": "success", "ti_duration_s": 6.413591, "queued_to_start_s": 0.598, "queued_to_end_s": 7.012, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1297, "compute_ms": 4572, "jvm_hwm_kb": 540348}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__195904_28588", "state": "success", "ti_duration_s": 8.375094, "queued_to_start_s": 0.019, "queued_to_end_s": 8.394, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2308, "compute_ms": 4019, "jvm_hwm_kb": 538472}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__195914_21408", "state": "success", "ti_duration_s": 8.477059, "queued_to_start_s": 0.018, "queued_to_end_s": 8.495, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2372, "compute_ms": 4015, "jvm_hwm_kb": 536532}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__195924_12303", "state": "success", "ti_duration_s": 10.151064, "queued_to_start_s": 0.02, "queued_to_end_s": 10.171, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4221, "compute_ms": 4470, "jvm_hwm_kb": 570144, "python_hwm_kb": 342400}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__195936_94197", "state": "success", "ti_duration_s": 7.69913, "queued_to_start_s": 0.676, "queued_to_end_s": 8.375, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1467, "compute_ms": 5563, "jvm_hwm_kb": 565204}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__195946_98742", "state": "success", "ti_duration_s": 7.384169, "queued_to_start_s": 0.684, "queued_to_end_s": 8.069, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1412, "compute_ms": 5257, "jvm_hwm_kb": 653688}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__195956_27775", "state": "success", "ti_duration_s": 9.164091, "queued_to_start_s": 0.035, "queued_to_end_s": 9.2, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2487, "compute_ms": 4141, "jvm_hwm_kb": 576548}
+{"mode": "noop_python", "run_id": "bench__bench_noop__200008_87229", "state": "success", "ti_duration_s": 0.656333, "queued_to_start_s": 0.018, "queued_to_end_s": 0.674, "hwm_kb": 252436}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__200011_3088", "state": "success", "ti_duration_s": 0.332592, "queued_to_start_s": 0.613, "queued_to_end_s": 0.946, "hwm_kb": 146712}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__200014_57854", "state": "success", "ti_duration_s": 6.528802, "queued_to_start_s": 0.797, "queued_to_end_s": 7.325, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1329, "compute_ms": 4610, "jvm_hwm_kb": 519992}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__200023_22034", "state": "success", "ti_duration_s": 8.632574, "queued_to_start_s": 0.021, "queued_to_end_s": 8.654, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2484, "compute_ms": 3867, "jvm_hwm_kb": 520496}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__200034_25475", "state": "success", "ti_duration_s": 8.436333, "queued_to_start_s": 0.014, "queued_to_end_s": 8.451, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2302, "compute_ms": 3890, "jvm_hwm_kb": 599736}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__200044_62606", "state": "success", "ti_duration_s": 9.069129, "queued_to_start_s": 0.029, "queued_to_end_s": 9.098, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4014, "compute_ms": 3782, "jvm_hwm_kb": 509724, "python_hwm_kb": 342248}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__200054_5645", "state": "success", "ti_duration_s": 7.098804, "queued_to_start_s": 0.613, "queued_to_end_s": 7.712, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1311, "compute_ms": 5134, "jvm_hwm_kb": 628600}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__200104_5582", "state": "success", "ti_duration_s": 6.367554, "queued_to_start_s": 0.66, "queued_to_end_s": 7.028, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1242, "compute_ms": 4546, "jvm_hwm_kb": 551876}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__200113_89983", "state": "success", "ti_duration_s": 8.657319, "queued_to_start_s": 0.024, "queued_to_end_s": 8.682, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2220, "compute_ms": 4042, "jvm_hwm_kb": 561184}
+{"mode": "noop_python", "run_id": "bench__bench_noop__200123_84520", "state": "success", "ti_duration_s": 0.724714, "queued_to_start_s": 0.016, "queued_to_end_s": 0.74, "hwm_kb": 249096}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__200126_12187", "state": "success", "ti_duration_s": 0.37523, "queued_to_start_s": 0.627, "queued_to_end_s": 1.002, "hwm_kb": 130068}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__200130_76970", "state": "success", "ti_duration_s": 6.585221, "queued_to_start_s": 0.73, "queued_to_end_s": 7.315, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1413, "compute_ms": 4588, "jvm_hwm_kb": 519872}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__200140_37286", "state": "success", "ti_duration_s": 9.953639, "queued_to_start_s": 0.02, "queued_to_end_s": 9.974, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2392, "compute_ms": 5283, "jvm_hwm_kb": 540772}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__200150_92815", "state": "success", "ti_duration_s": 8.893217, "queued_to_start_s": 0.018, "queued_to_end_s": 8.911, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2588, "compute_ms": 4034, "jvm_hwm_kb": 566952}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__200200_47836", "state": "success", "ti_duration_s": 9.384147, "queued_to_start_s": 0.019, "queued_to_end_s": 9.404, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4158, "compute_ms": 4163, "jvm_hwm_kb": 545036, "python_hwm_kb": 342508}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__200212_88157", "state": "success", "ti_duration_s": 7.987938, "queued_to_start_s": 0.775, "queued_to_end_s": 8.762, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1422, "compute_ms": 5900, "jvm_hwm_kb": 596564}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__200222_60985", "state": "success", "ti_duration_s": 6.624841, "queued_to_start_s": 0.616, "queued_to_end_s": 7.241, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1230, "compute_ms": 4680, "jvm_hwm_kb": 575988}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__200232_86397", "state": "success", "ti_duration_s": 8.968722, "queued_to_start_s": 0.019, "queued_to_end_s": 8.988, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2286, "compute_ms": 4169, "jvm_hwm_kb": 568080}
+{"mode": "noop_python", "run_id": "bench__bench_noop__200242_422", "state": "success", "ti_duration_s": 0.753492, "queued_to_start_s": 0.021, "queued_to_end_s": 0.775, "hwm_kb": 252444}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__200245_18490", "state": "success", "ti_duration_s": 0.33258, "queued_to_start_s": 0.624, "queued_to_end_s": 0.956, "hwm_kb": 143472}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__200248_72237", "state": "success", "ti_duration_s": 6.318492, "queued_to_start_s": 0.607, "queued_to_end_s": 6.925, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1288, "compute_ms": 4475, "jvm_hwm_kb": 488164}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__200257_18819", "state": "success", "ti_duration_s": 8.355279, "queued_to_start_s": 0.019, "queued_to_end_s": 8.374, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2394, "compute_ms": 3612, "jvm_hwm_kb": 599852}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__200308_55995", "state": "success", "ti_duration_s": 7.909864, "queued_to_start_s": 0.021, "queued_to_end_s": 7.931, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2132, "compute_ms": 3654, "jvm_hwm_kb": 539516}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__200317_71294", "state": "success", "ti_duration_s": 9.228776, "queued_to_start_s": 0.021, "queued_to_end_s": 9.25, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4256, "compute_ms": 3673, "jvm_hwm_kb": 526420, "python_hwm_kb": 342356}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__200328_97065", "state": "success", "ti_duration_s": 6.738469, "queued_to_start_s": 0.522, "queued_to_end_s": 7.26, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1183, "compute_ms": 4982, "jvm_hwm_kb": 557588}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__200338_32100", "state": "success", "ti_duration_s": 6.419373, "queued_to_start_s": 0.597, "queued_to_end_s": 7.016, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1291, "compute_ms": 4500, "jvm_hwm_kb": 518084}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__200346_60321", "state": "success", "ti_duration_s": 8.204994, "queued_to_start_s": 0.018, "queued_to_end_s": 8.223, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2076, "compute_ms": 3662, "jvm_hwm_kb": 576436}
+{"mode": "noop_python", "run_id": "bench__bench_noop__200355_19118", "state": "success", "ti_duration_s": 0.709225, "queued_to_start_s": 0.023, "queued_to_end_s": 0.732, "hwm_kb": 252468}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__200358_51232", "state": "success", "ti_duration_s": 0.292209, "queued_to_start_s": 0.554, "queued_to_end_s": 0.846, "hwm_kb": 145428}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__200403_11554", "state": "success", "ti_duration_s": 6.334005, "queued_to_start_s": 0.629, "queued_to_end_s": 6.963, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1234, "compute_ms": 4555, "jvm_hwm_kb": 502784}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__200411_57693", "state": "success", "ti_duration_s": 7.774255, "queued_to_start_s": 0.026, "queued_to_end_s": 7.8, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2249, "compute_ms": 3478, "jvm_hwm_kb": 560864}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__200420_29295", "state": "success", "ti_duration_s": 7.468954, "queued_to_start_s": 0.016, "queued_to_end_s": 7.485, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2054, "compute_ms": 3540, "jvm_hwm_kb": 561232}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__200429_26558", "state": "success", "ti_duration_s": 8.846258, "queued_to_start_s": 0.016, "queued_to_end_s": 8.862, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 4012, "compute_ms": 3751, "jvm_hwm_kb": 536172, "python_hwm_kb": 342420}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__200440_68136", "state": "success", "ti_duration_s": 7.202621, "queued_to_start_s": 0.651, "queued_to_end_s": 7.854, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1256, "compute_ms": 5292, "jvm_hwm_kb": 528728}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__200449_87751", "state": "success", "ti_duration_s": 6.268976, "queued_to_start_s": 0.632, "queued_to_end_s": 6.901, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1183, "compute_ms": 4507, "jvm_hwm_kb": 505924}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__200457_91342", "state": "success", "ti_duration_s": 8.084066, "queued_to_start_s": 0.015, "queued_to_end_s": 8.099, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2101, "compute_ms": 3725, "jvm_hwm_kb": 569944}
+{"mode": "noop_python", "run_id": "bench__bench_noop__200507_62696", "state": "success", "ti_duration_s": 0.695914, "queued_to_start_s": 0.016, "queued_to_end_s": 0.712, "hwm_kb": 252464}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__200510_57749", "state": "success", "ti_duration_s": 0.344547, "queued_to_start_s": 0.568, "queued_to_end_s": 0.912, "hwm_kb": 140060}
+{"mode": "java_sdk", "run_id": "bench__bench_scala_java_sdk__200513_11934", "state": "success", "ti_duration_s": 6.228651, "queued_to_start_s": 0.704, "queued_to_end_s": 6.933, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1217, "compute_ms": 4486, "jvm_hwm_kb": 592568}
+{"mode": "spark_submit_bash", "run_id": "bench__bench_spark_submit_bash__200522_24633", "state": "success", "ti_duration_s": 7.601238, "queued_to_start_s": 0.017, "queued_to_end_s": 7.618, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2167, "compute_ms": 3502, "jvm_hwm_kb": 559684}
+{"mode": "spark_submit_operator", "run_id": "bench__bench_spark_submit_operator__200532_33757", "state": "success", "ti_duration_s": 7.930181, "queued_to_start_s": 0.016, "queued_to_end_s": 7.947, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2328, "compute_ms": 3587, "jvm_hwm_kb": 563816}
+{"mode": "pyspark_task", "run_id": "bench__bench_pyspark_task__200542_289", "state": "success", "ti_duration_s": 8.264815, "queued_to_start_s": 0.036, "queued_to_end_s": 8.301, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 3632, "compute_ms": 3300, "jvm_hwm_kb": 513248, "python_hwm_kb": 342480}
+{"mode": "java_sdk_daria", "run_id": "bench__bench_scala_daria_java_sdk__200551_72960", "state": "success", "ti_duration_s": 6.426624, "queued_to_start_s": 0.551, "queued_to_end_s": 6.978, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1158, "compute_ms": 4704, "jvm_hwm_kb": 650780}
+{"mode": "java_sdk_plain", "run_id": "bench__bench_scala_plain_java_sdk__200600_80414", "state": "success", "ti_duration_s": 6.083881, "queued_to_start_s": 0.579, "queued_to_end_s": 6.662, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 1305, "compute_ms": 4189, "jvm_hwm_kb": 585576}
+{"mode": "spark_submit_daria", "run_id": "bench__bench_spark_submit_daria__200609_7251", "state": "success", "ti_duration_s": 8.123094, "queued_to_start_s": 0.027, "queued_to_end_s": 8.15, "rows": 20000000, "groups": 1000, "checksum": 399999980000000, "spark_start_ms": 2123, "compute_ms": 3704, "jvm_hwm_kb": 569644}
+{"mode": "noop_python", "run_id": "bench__bench_noop__200618_47131", "state": "success", "ti_duration_s": 0.783804, "queued_to_start_s": 0.026, "queued_to_end_s": 0.81, "hwm_kb": 252324}
+{"mode": "noop_scala_java_sdk", "run_id": "bench__bench_noop__200621_68212", "state": "success", "ti_duration_s": 0.302054, "queued_to_start_s": 0.558, "queued_to_end_s": 0.86, "hwm_kb": 146476}
 {
   "java_sdk": {
     "n": 7,
     "failed": 0,
     "ti_duration_s": {
-      "median": 5.364,
-      "min": 5.129756,
-      "max": 6.296353
+      "median": 6.414,
+      "min": 6.228651,
+      "max": 6.792606
     },
     "queued_to_start_s": {
-      "median": 0.487,
-      "min": 0.482,
-      "max": 0.689
+      "median": 0.704,
+      "min": 0.598,
+      "max": 0.892
     },
     "queued_to_end_s": {
-      "median": 5.85,
-      "min": 5.627,
-      "max": 6.779
+      "median": 7.012,
+      "min": 6.925,
+      "max": 7.684
     },
     "spark_start_ms": {
-      "median": 1140,
-      "min": 1052,
-      "max": 1347
+      "median": 1297,
+      "min": 1217,
+      "max": 1413
     },
     "compute_ms": {
-      "median": 3823,
-      "min": 3597,
-      "max": 4397
+      "median": 4572,
+      "min": 4475,
+      "max": 4832
     },
     "jvm_hwm_kb": {
-      "median": 527068,
-      "min": 464116,
-      "max": 544556
+      "median": 519992,
+      "min": 488164,
+      "max": 592568
     },
-    "overhead_s_median": 2.088,
-    "overhead_excl_spark_start_s_median": 0.978
+    "overhead_s_median": 2.45,
+    "overhead_excl_spark_start_s_median": 1.23
+  },
+  "java_sdk_daria": {
+    "n": 7,
+    "failed": 0,
+    "ti_duration_s": {
+      "median": 7.203,
+      "min": 6.426624,
+      "max": 7.987938
+    },
+    "queued_to_start_s": {
+      "median": 0.651,
+      "min": 0.522,
+      "max": 0.935
+    },
+    "queued_to_end_s": {
+      "median": 7.854,
+      "min": 6.978,
+      "max": 8.762
+    },
+    "spark_start_ms": {
+      "median": 1311,
+      "min": 1158,
+      "max": 1467
+    },
+    "compute_ms": {
+      "median": 5260,
+      "min": 4704,
+      "max": 5900
+    },
+    "jvm_hwm_kb": {
+      "median": 565204,
+      "min": 528728,
+      "max": 650780
+    },
+    "overhead_s_median": 2.578,
+    "overhead_excl_spark_start_s_median": 1.306
+  },
+  "java_sdk_plain": {
+    "n": 7,
+    "failed": 0,
+    "ti_duration_s": {
+      "median": 6.389,
+      "min": 6.083881,
+      "max": 7.384169
+    },
+    "queued_to_start_s": {
+      "median": 0.616,
+      "min": 0.579,
+      "max": 0.684
+    },
+    "queued_to_end_s": {
+      "median": 7.016,
+      "min": 6.662,
+      "max": 8.069
+    },
+    "spark_start_ms": {
+      "median": 1271,
+      "min": 1183,
+      "max": 1412
+    },
+    "compute_ms": {
+      "median": 4522,
+      "min": 4189,
+      "max": 5257
+    },
+    "jvm_hwm_kb": {
+      "median": 551876,
+      "min": 505924,
+      "max": 653688
+    },
+    "overhead_s_median": 2.482,
+    "overhead_excl_spark_start_s_median": 1.225
   },
   "noop_python": {
     "n": 7,
     "failed": 0,
     "ti_duration_s": {
-      "median": 0.546,
-      "min": 0.534646,
-      "max": 0.749109
+      "median": 0.725,
+      "min": 0.656333,
+      "max": 0.783804
     },
     "queued_to_start_s": {
-      "median": 0.01,
-      "min": 0.009,
-      "max": 0.114
+      "median": 0.021,
+      "min": 0.016,
+      "max": 0.026
     },
     "queued_to_end_s": {
-      "median": 0.556,
-      "min": 0.544,
-      "max": 0.863
+      "median": 0.74,
+      "min": 0.674,
+      "max": 0.81
     },
     "hwm_kb": {
-      "median": 251136,
-      "min": 247088,
-      "max": 251300
+      "median": 252436,
+      "min": 249096,
+      "max": 252468
     }
   },
   "noop_scala_java_sdk": {
     "n": 7,
     "failed": 0,
     "ti_duration_s": {
-      "median": 0.27,
-      "min": 0.257569,
-      "max": 0.280662
+      "median": 0.333,
+      "min": 0.292209,
+      "max": 0.37523
     },
     "queued_to_start_s": {
-      "median": 0.489,
-      "min": 0.468,
-      "max": 0.56
+      "median": 0.613,
+      "min": 0.554,
+      "max": 0.627
     },
     "queued_to_end_s": {
-      "median": 0.758,
-      "min": 0.732,
-      "max": 0.836
+      "median": 0.946,
+      "min": 0.846,
+      "max": 1.002
     },
     "hwm_kb": {
-      "median": 130084,
-      "min": 117216,
-      "max": 144396
+      "median": 143472,
+      "min": 130068,
+      "max": 146712
     }
   },
   "pyspark_task": {
     "n": 7,
     "failed": 0,
     "ti_duration_s": {
-      "median": 7.374,
-      "min": 7.151344,
-      "max": 10.650234
+      "median": 9.229,
+      "min": 8.264815,
+      "max": 10.151064
     },
     "queued_to_start_s": {
-      "median": 0.01,
-      "min": 0.009,
-      "max": 0.114
+      "median": 0.02,
+      "min": 0.016,
+      "max": 0.036
     },
     "queued_to_end_s": {
-      "median": 7.384,
-      "min": 7.16,
-      "max": 10.764
+      "median": 9.248,
+      "min": 8.301,
+      "max": 10.171
     },
     "spark_start_ms": {
-      "median": 3295,
-      "min": 3187,
-      "max": 4537
+      "median": 4014,
+      "min": 3632,
+      "max": 4256
     },
     "compute_ms": {
-      "median": 3208,
-      "min": 3108,
-      "max": 5169
+      "median": 3779,
+      "min": 3300,
+      "max": 4470
     },
     "jvm_hwm_kb": {
-      "median": 510016,
-      "min": 492252,
-      "max": 605356
+      "median": 526420,
+      "min": 501992,
+      "max": 570144
     },
     "python_hwm_kb": {
-      "median": 339712,
-      "min": 333264,
-      "max": 340680
+      "median": 342420,
+      "min": 342248,
+      "max": 342716
     },
-    "overhead_s_median": 4.235,
-    "overhead_excl_spark_start_s_median": 0.952
+    "overhead_s_median": 5.316,
+    "overhead_excl_spark_start_s_median": 1.321
   },
   "spark_submit_bash": {
     "n": 7,
     "failed": 0,
     "ti_duration_s": {
-      "median": 6.95,
-      "min": 6.659351,
-      "max": 8.828805
+      "median": 8.355,
+      "min": 7.601238,
+      "max": 9.953639
     },
     "queued_to_start_s": {
-      "median": 0.01,
-      "min": 0.009,
-      "max": 0.106
+      "median": 0.02,
+      "min": 0.017,
+      "max": 0.13
     },
     "queued_to_end_s": {
-      "median": 6.959,
-      "min": 6.669,
-      "max": 8.838
+      "median": 8.394,
+      "min": 7.618,
+      "max": 9.974
     },
     "spark_start_ms": {
-      "median": 1939,
-      "min": 1854,
-      "max": 2163
+      "median": 2364,
+      "min": 2167,
+      "max": 2484
     },
     "compute_ms": {
-      "median": 3199,
-      "min": 3077,
-      "max": 4443
+      "median": 3867,
+      "min": 3478,
+      "max": 5283
     },
     "jvm_hwm_kb": {
-      "median": 540048,
-      "min": 509628,
-      "max": 608784
+      "median": 540772,
+      "min": 516240,
+      "max": 599852
     },
-    "overhead_s_median": 3.882,
-    "overhead_excl_spark_start_s_median": 1.89
+    "overhead_s_median": 4.54,
+    "overhead_excl_spark_start_s_median": 2.176
+  },
+  "spark_submit_daria": {
+    "n": 7,
+    "failed": 0,
+    "ti_duration_s": {
+      "median": 8.574,
+      "min": 8.084066,
+      "max": 9.164091
+    },
+    "queued_to_start_s": {
+      "median": 0.019,
+      "min": 0.015,
+      "max": 0.035
+    },
+    "queued_to_end_s": {
+      "median": 8.59,
+      "min": 8.099,
+      "max": 9.2
+    },
+    "spark_start_ms": {
+      "median": 2165,
+      "min": 2076,
+      "max": 2487
+    },
+    "compute_ms": {
+      "median": 4042,
+      "min": 3662,
+      "max": 4169
+    },
+    "jvm_hwm_kb": {
+      "median": 569944,
+      "min": 561184,
+      "max": 596560
+    },
+    "overhead_s_median": 4.561,
+    "overhead_excl_spark_start_s_median": 2.42
   },
   "spark_submit_operator": {
     "n": 7,
     "failed": 0,
     "ti_duration_s": {
-      "median": 6.948,
-      "min": 6.545975,
-      "max": 9.69932
+      "median": 8.436,
+      "min": 7.468954,
+      "max": 8.893217
     },
     "queued_to_start_s": {
-      "median": 0.01,
-      "min": 0.009,
-      "max": 0.102
+      "median": 0.018,
+      "min": 0.014,
+      "max": 0.127
     },
     "queued_to_end_s": {
-      "median": 6.958,
-      "min": 6.557,
-      "max": 9.711
+      "median": 8.451,
+      "min": 7.485,
+      "max": 8.911
     },
     "spark_start_ms": {
-      "median": 1918,
-      "min": 1833,
-      "max": 3201
+      "median": 2328,
+      "min": 2054,
+      "max": 2588
     },
     "compute_ms": {
-      "median": 3289,
-      "min": 3062,
-      "max": 4308
+      "median": 3890,
+      "min": 3540,
+      "max": 4034
     },
     "jvm_hwm_kb": {
-      "median": 530820,
-      "min": 514292,
-      "max": 555140
+      "median": 561232,
+      "min": 516544,
+      "max": 599736
     },
-    "overhead_s_median": 3.664,
-    "overhead_excl_spark_start_s_median": 1.746
+    "overhead_s_median": 4.48,
+    "overhead_excl_spark_start_s_median": 2.145
   }
 }

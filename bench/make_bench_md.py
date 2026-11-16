@@ -8,6 +8,9 @@ LABELS = {
     "spark_submit_bash": "(b1) BashOperator `spark-submit` (Scala jar)",
     "spark_submit_operator": "(b2) SparkSubmitOperator (Scala jar)",
     "pyspark_task": "(c) PySpark `@task`",
+    "java_sdk_daria": "(d1) spark-daria task via Java SDK (`@task.stub`)",
+    "java_sdk_plain": "(d2) same pipeline in plain Spark via Java SDK (`@task.stub`)",
+    "spark_submit_daria": "(d3) BashOperator `spark-submit` spark-daria pipeline",
     "noop_scala_java_sdk": "no-op Scala task via Java SDK",
     "noop_python": "no-op Python `@task`",
 }
@@ -22,7 +25,7 @@ rows = [
     "| Mode | n | queued→end (s) | TI duration (s) | queued→start (s) | Spark session start (s) | Spark compute (s) | Overhead excl. compute (s) | Overhead excl. Spark start+compute (s) | Driver JVM peak RSS (MiB) | Python task peak RSS (MiB) |",
     "|---|---|---|---|---|---|---|---|---|---|---|",
 ]
-for mode in ["java_sdk", "spark_submit_bash", "spark_submit_operator", "pyspark_task"]:
+for mode in [k for k in ["java_sdk", "spark_submit_bash", "spark_submit_operator", "pyspark_task", "java_sdk_daria", "java_sdk_plain", "spark_submit_daria"] if k in s]:
     r = s[mode]
     py = m(mode, "python_hwm_kb", 1 / 1024, "{:.0f}")
     rows.append(

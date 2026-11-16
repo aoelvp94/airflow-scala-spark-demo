@@ -12,6 +12,7 @@ from airflow.sdk import dag, task
 
 APP_JAR = "/usr/local/airflow/include/spark-submit/scala-spark-workload.jar"
 APP_CLASS = "example.scalaspark.SubmitApp"
+DARIA_JAR = "/usr/local/airflow/include/spark-submit/spark-daria_2.13-1.2.4.jar"
 ROWS = int(os.environ.get("BENCH_ROWS", "20000000"))
 COMMON = {"schedule": None, "catchup": False, "max_active_runs": 1, "tags": ["bench", "spark"]}
 
@@ -56,6 +57,27 @@ def bench_spark_submit_operator():
         driver_memory="1g",
         conf={"spark.ui.enabled": "false"},
         application_args=["spark_submit_operator", "{{ run_id }}"],
+    )
+
+
+@dag(dag_id="bench_scala_daria_java_sdk", **COMMON)
+def bench_scala_daria_java_sdk():
+    scala_stub("workload")
+
+
+@dag(dag_id="bench_scala_plain_java_sdk", **COMMON)
+def bench_scala_plain_java_sdk():
+    scala_stub("workload")
+
+
+@dag(dag_id="bench_spark_submit_daria", **COMMON)
+def bench_spark_submit_daria():
+    BashOperator(
+        task_id="workload",
+        bash_command=(
+            f"spark-submit --master 'local[*]' --driver-memory 1g --conf spark.ui.enabled=false "
+            f"--jars {DARIA_JAR} --class {APP_CLASS} {APP_JAR} daria '{{{{ run_id }}}}'"
+        ),
     )
 
 
@@ -126,5 +148,8 @@ def bench_noop():
 bench_scala_java_sdk()
 bench_spark_submit_bash()
 bench_spark_submit_operator()
+bench_scala_daria_java_sdk()
+bench_scala_plain_java_sdk()
+bench_spark_submit_daria()
 bench_pyspark_task()
 bench_noop()

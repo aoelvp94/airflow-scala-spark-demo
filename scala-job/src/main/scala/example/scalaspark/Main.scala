@@ -19,6 +19,8 @@ object ScalaBundle {
       .register("bench_noop", "scala_noop", classOf[Noop])
       .register("scala_spark_daria", "daria", classOf[SparkDariaWorkload])
       .register("scala_spark_daria", "plain", classOf[SparkPlainWorkload])
+      .register("bench_scala_daria_java_sdk", "workload", classOf[SparkDariaWorkload])
+      .register("bench_scala_plain_java_sdk", "workload", classOf[SparkPlainWorkload])
       .register(NativeDag.build())
       .register(DariaNativeDag.build())
 }

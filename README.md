@@ -19,7 +19,7 @@ Repo: [aoelvp94/airflow-scala-spark-demo](https://github.com/aoelvp94/airflow-sc
 | `astro dev start` with `apache/airflow:3.4.0-python3.12` | ⚠️ needs 3 Dockerfile workarounds (ISSUES.md #4). Astro Runtime 3.3-12 is Airflow 3.3, so it is not usable for the Java SDK 1.0.0 |
 | JVM in the image | Temurin 17 JRE copied from `eclipse-temurin:17-jre` (multi-stage). The Airflow image has no JRE |
 | Classloader isolation | None. JavaCoordinator puts every jar of the bundle on one flat `-classpath`, so Spark's and the SDK's dependencies share it, hence the Jackson clash. One coordinator plus one Dag bundle per classpath is the isolation unit |
-| spark-daria 1.2.4 on Spark 4.3.0 `local[*]` (`camelCaseToSnakeCaseColumns`, `DariaValidator`, `composeTransforms`, `singleSpace`, `ColumnExt.isTruthy`) | ✅ compiles and runs; unit tests and a 20M-row local bench against an equivalent plain-Spark path (BENCH.md) |
+| spark-daria 1.2.4 on Spark 4.3.0 `local[*]` (`camelCaseToSnakeCaseColumns`, `DariaValidator`, `composeTransforms`, `singleSpace`, `ColumnExt.isTruthy`) | ✅ compiles and runs; unit tests, a 20M-row local bench, and end-to-end on Airflow 3.4 (`scala_spark_daria`, `scala_native_daria`, and bench modes (d1)–(d3) in BENCH.md) |
 
 Versions: Airflow 3.4.0, Task SDK 1.4.0, Java SDK 1.0.0 (Maven Central, 2026-11-13), Scala 2.13.18, sbt 1.13.1, Spark/pyspark 4.3.0, spark-daria 1.2.4, Temurin 17.0.x (Astro image) / Temurin 21.0.13 (local sbt when Docker is down), Astro CLI 1.47.0.
 
@@ -63,7 +63,9 @@ The Scala job uses [spark-daria](https://github.com/mrpowers-io/spark-daria) 1.2
 
 A dedicated Airflow `SparkDariaOperator` would be overkill. spark-daria is a DataFrame library, not a runtime, so the right unit is a `Task` that already opens a `SparkSession`.
 
-Local benchmark, same 20M-row workload, one shared `local[*]` session, 1 warm-up + 7 measured rounds, median: spark-daria 353 ms vs plain Spark 354 ms, identical checksum. See `BENCH.md`. Docker was down, so the Airflow DAG path was not re-run.
+Local benchmark, same 20M-row workload, one shared `local[*]` session, 1 warm-up + 7 measured rounds, median: spark-daria 353 ms vs plain Spark 354 ms, identical checksum.
+
+Through Airflow (fresh JVM per task, 7 rounds, median queued→end): spark-daria via the Java SDK 7.85 s, the same pipeline in plain Spark via the Java SDK 7.02 s, spark-daria via `spark-submit` 8.59 s. The 0.8 s daria gap on the Java SDK path is all compute and does not show on a hot JVM. See `BENCH.md`.
 
 ```bash
 ./sbt.sh -batch test

@@ -13,7 +13,11 @@ MODES = {
     "spark_submit_bash": "bench_spark_submit_bash",
     "spark_submit_operator": "bench_spark_submit_operator",
     "pyspark_task": "bench_pyspark_task",
+    "java_sdk_daria": "bench_scala_daria_java_sdk",
+    "java_sdk_plain": "bench_scala_plain_java_sdk",
+    "spark_submit_daria": "bench_spark_submit_daria",
 }
+RESULT_DIRS = {"java_sdk_daria": "daria", "java_sdk_plain": "plain", "spark_submit_daria": "daria"}
 RUNS = int(os.environ.get("BENCH_RUNS", "7"))
 WARMUP = int(os.environ.get("BENCH_WARMUP", "1"))
 
@@ -25,7 +29,7 @@ def ts(s: str) -> float:
 def result_file(mode: str, run_id: str) -> dict:
     safe = "".join(c if c.isalnum() or c in "_.-" else "_" for c in run_id)
     out = subprocess.run(
-        ["docker", "exec", af.SCHEDULER, "cat", f"/tmp/bench_results/{mode}/{safe}.json"],
+        ["docker", "exec", af.SCHEDULER, "cat", f"/tmp/bench_results/{RESULT_DIRS.get(mode, mode)}/{safe}.json"],
         capture_output=True,
         text=True,
     )
@@ -44,7 +48,7 @@ def one(mode: str, dag_id: str, task_id: str = "workload", tag: str = "bench") -
         "queued_to_end_s": round(ts(ti["end_date"]) - ts(ti["queued_when"]), 3),
     }
     if mode in MODES:
-        rec.update(result_file(mode, run_id))
+        rec.update({k: v for k, v in result_file(mode, run_id).items() if k != "mode"})
     else:
         rec["hwm_kb"] = af.call("GET", f"/dags/{dag_id}/dagRuns/{run_id}/taskInstances/{task_id}/xcomEntries/return_value")["value"]
     return rec
