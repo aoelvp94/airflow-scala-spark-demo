@@ -127,10 +127,10 @@ The OpenLineage Spark agent (`io.openlineage:openlineage-spark_2.13`, latest 1.5
 What is used instead is a first-party Spark 4 API: `org.apache.spark.sql.util.QueryExecutionListener`, registered on the session in each task. On a successful write it walks the analyzed logical plan (`InsertIntoHadoopFsRelationCommand`, `LogicalRelation` / `HadoopFsRelation`) and records:
 
 - dataset inputs and outputs (Parquet paths)
-- column-level links by following `ExprId` / `Alias` references back to source attributes
+- column-level links by following `ExprId` values through `Project` / `Alias` (and `GetStructField` for nested columns) back to the source relation's attributes
 - a compact `logicalPlan` tree string
 
-Events are written as JSON Lines that follow the shape of an OpenLineage `COMPLETE` run event, including a `columnLineage` array, plus a `summary.json` for the dashboard. That is honest plan-derived lineage, not a full OpenLineage collector.
+Events are written as JSON Lines that follow the shape of an OpenLineage `COMPLETE` run event, including a `columnLineage` array. `summary.json` composes those edges across layers for the dashboard, groups them by target dataset, and drops identity self-mappings. That is honest plan-derived lineage, not a full OpenLineage collector.
 
 ## Airflow plugin dashboard
 

@@ -90,11 +90,14 @@ class PipelineTest extends AnyFunSuite with BeforeAndAfterAll {
     new java.io.File(lineageDir).mkdirs()
     val eventsFile = java.nio.file.Paths.get(lineageDir, "events.jsonl")
     java.nio.file.Files.deleteIfExists(eventsFile)
+    java.nio.file.Files.deleteIfExists(java.nio.file.Paths.get(lineageDir, "summary.json"))
     spark.listenerManager.register(new FileLineageListener(lineageDir, "lineage-test"))
     val bronzePath = s"$root/bronze"
     val silverPath = s"$root/silver"
+    val goldPath = s"$root/gold"
     Pipeline.bronzeFrame(spark, 40L).write.mode("overwrite").parquet(bronzePath)
     val _ = Pipeline.transform(spark, bronzePath, silverPath, "daria")
+    val _gold = Pipeline.toGold(spark, silverPath, goldPath)
     val events = Lineage.readEvents(lineageDir)
     assert(events.nonEmpty, "expected at least one write event")
     val complete = events.filter(_.get("eventType") == "COMPLETE")
@@ -108,5 +111,33 @@ class PipelineTest extends AnyFunSuite with BeforeAndAfterAll {
       cols != null && cols.toString.contains("order_id")
     }
     assert(hasColumns)
+
+    val summaryPath = Lineage.writeSummary(lineageDir)
+    val summary = new com.fasterxml.jackson.databind.ObjectMapper()
+      .readValue(java.nio.file.Files.readString(summaryPath), classOf[java.util.Map[String, Any]])
+    val columns = summary
+      .get("columnLineage")
+      .asInstanceOf[java.util.List[_]]
+      .toArray
+      .collect { case m: java.util.Map[_, _] => m }
+    def pathOf(dataset: String, output: String): String = {
+      val row = columns.find { m =>
+        String.valueOf(m.get("outputDataset")) == dataset && String.valueOf(m.get("output")) == output
+      }
+      assert(row.isDefined, s"missing $dataset.$output in ${columns.map(_.get("output")).mkString(", ")}")
+      String.valueOf(row.get.get("path"))
+    }
+    val orderId = pathOf("silver", "order_id")
+    assert(orderId.contains("OrderID") && orderId.contains("order_id"), orderId)
+    val city = pathOf("silver", "address_city")
+    assert(city.contains("Address.City") && city.contains("address_city"), city)
+    val revenue = pathOf("gold/revenue_by_country_month", "revenue")
+    assert(revenue.contains("AMOUNT_USD") && revenue.contains("amount_usd") && revenue.contains("revenue"), revenue)
+    columns.foreach { m =>
+      val output = String.valueOf(m.get("output"))
+      val path = String.valueOf(m.get("path"))
+      val parts = path.split("→|; ").map(_.trim).filter(_.nonEmpty).distinct
+      assert(!(parts.length == 1 && parts.head == output), s"identity mapping for $output: $path")
+    }
   }
 }
