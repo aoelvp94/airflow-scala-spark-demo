@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-11-16T21:44:43+0400",
+  "spark": "4.3.0 local[*] pyspark",
+  "bronze_path": "/tmp/pipeline/bench/bronze",
+  "bronze_rows": 210000,
+  "spark_session_start_ms": 3492,
+  "runs_per_mode": 7,
+  "warmup_per_mode": 1,
+  "summary": {
+    "pyspark": {
+      "n": 7,
+      "compute_ms": {
+        "median": 764,
+        "min": 725,
+        "max": 1263
+      },
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071
+    }
+  },
+  "runs": [
+    {
+      "mode": "pyspark",
+      "run_id": "bench-1",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 1263
+    },
+    {
+      "mode": "pyspark",
+      "run_id": "bench-2",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 847
+    },
+    {
+      "mode": "pyspark",
+      "run_id": "bench-3",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 725
+    },
+    {
+      "mode": "pyspark",
+      "run_id": "bench-4",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 804
+    },
+    {
+      "mode": "pyspark",
+      "run_id": "bench-5",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 727
+    },
+    {
+      "mode": "pyspark",
+      "run_id": "bench-6",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 752
+    },
+    {
+      "mode": "pyspark",
+      "run_id": "bench-7",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 764
+    }
+  ],
+  "warmup": [
+    {
+      "mode": "pyspark",
+      "run_id": "warmup-0",
+      "state": "success",
+      "bronze_rows": 210000,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "compute_ms": 4606
+    }
+  ]
+}

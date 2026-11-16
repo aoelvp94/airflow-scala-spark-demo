@@ -1,0 +1,220 @@
+{
+  "warmup": [
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "warmup-0",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 4912,
+      "jvm_hwm_kb": 1238172
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "warmup-0",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 1251,
+      "jvm_hwm_kb": 1310764
+    }
+  ],
+  "spark_session_start_ms": 1426,
+  "bronze_path": "/tmp/pipeline/bench/bronze",
+  "warmup_per_mode": 1,
+  "host": {
+    "nproc": 8,
+    "loadavg_end": [
+      3.0,
+      1.31,
+      0.73
+    ]
+  },
+  "runs": [
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-1",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 952,
+      "jvm_hwm_kb": 1379168
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-1",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 894,
+      "jvm_hwm_kb": 1428468
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-2",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 723,
+      "jvm_hwm_kb": 1451408
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-2",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 666,
+      "jvm_hwm_kb": 1487576
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-3",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 676,
+      "jvm_hwm_kb": 1523940
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-3",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 640,
+      "jvm_hwm_kb": 1556948
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-4",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 634,
+      "jvm_hwm_kb": 1591948
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-4",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 680,
+      "jvm_hwm_kb": 1604116
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-5",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 680,
+      "jvm_hwm_kb": 1606832
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-5",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 611,
+      "jvm_hwm_kb": 1612012
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-6",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 582,
+      "jvm_hwm_kb": 1614124
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-6",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 586,
+      "jvm_hwm_kb": 1621396
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-7",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "daria",
+      "compute_ms": 653,
+      "jvm_hwm_kb": 1631488
+    },
+    {
+      "state": "success",
+      "silver_rows": 200000,
+      "run_id": "bench-7",
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "mode": "plain",
+      "compute_ms": 607,
+      "jvm_hwm_kb": 1639668
+    }
+  ],
+  "runs_per_mode": 7,
+  "java": "21.0.13",
+  "bronze_rows": 210000,
+  "unique_rows": 200000,
+  "spark_daria": "1.2.4",
+  "bronze_write_ms": 5301,
+  "summary": {
+    "daria": {
+      "n": 7,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "compute_ms": {
+        "median": 676,
+        "min": 582,
+        "max": 952
+      },
+      "jvm_hwm_kb": {
+        "median": 1591948,
+        "min": 1379168,
+        "max": 1631488
+      }
+    },
+    "plain": {
+      "n": 7,
+      "silver_rows": 200000,
+      "checksum": 69569679071,
+      "bronze_rows": 210000,
+      "compute_ms": {
+        "median": 640,
+        "min": 586,
+        "max": 894
+      },
+      "jvm_hwm_kb": {
+        "median": 1604116,
+        "min": 1428468,
+        "max": 1639668
+      }
+    }
+  },
+  "spark": "4.3.0 local[*]",
+  "generated_at": "2026-11-16T21:43:58+0400",
+  "note": "Local Spark transform bench on a shared bronze snapshot. Ingest (HTTP) is measured in the Airflow Dag, not here."
+}

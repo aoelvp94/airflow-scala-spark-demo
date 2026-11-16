@@ -119,3 +119,70 @@ class SparkPlainWorkload extends Task {
     client.setXCom(r.toJava)
   }
 }
+
+class SparkIngest extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[SparkIngest])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val spark = Workload.session("pipeline-ingest")
+    try {
+      val root = Pipeline.rootDir(context.ti.runId)
+      val unique = Pipeline.DefaultUniqueRows
+      val result = Pipeline.ingest(spark, s"$root/bronze", unique, Pipeline.DefaultPageSize)
+      val bronze = spark.read.schema(Pipeline.BronzeSchema).parquet(result.bronzePath)
+      log.info(
+        "Ingested {} bronze rows ({} unique ids) from {} pages at {}",
+        Long.box(result.rows),
+        Long.box(result.uniqueIds),
+        Int.box(result.pages),
+        result.sourceUrl
+      )
+      bronze.printSchema()
+      bronze.show(5, truncate = false)
+      client.setXCom(
+        Map(
+          "bronze_path" -> result.bronzePath,
+          "rows" -> result.rows,
+          "unique_ids" -> result.uniqueIds,
+          "pages" -> result.pages,
+          "source_url" -> result.sourceUrl
+        ).asJava
+      )
+    } finally spark.stop()
+  }
+}
+
+class SparkTransform extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[SparkTransform])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val upstream = client.getXCom("ingest").asInstanceOf[java.util.Map[String, Any]].asScala
+    val bronzePath = upstream("bronze_path").toString
+    val silverPath = bronzePath.replaceAll("bronze/?$", "silver")
+    val spark = Workload.session("pipeline-transform")
+    try {
+      val result = Pipeline.transform(spark, bronzePath, silverPath, "daria")
+      val silver = spark.read.parquet(result.silverPath)
+      log.info(
+        "Transformed {} bronze rows into {} silver rows, checksum {}",
+        Long.box(result.bronzeRows),
+        Long.box(result.silverRows),
+        Long.box(result.checksum)
+      )
+      silver.printSchema()
+      silver.show(5, truncate = false)
+      require(
+        result.silverRows == result.bronzeRows - Pipeline.duplicateCount(result.silverRows),
+        s"unexpected silver count $result"
+      )
+      client.setXCom(
+        Map(
+          "silver_path" -> result.silverPath,
+          "bronze_rows" -> result.bronzeRows,
+          "silver_rows" -> result.silverRows,
+          "checksum" -> result.checksum
+        ).asJava
+      )
+    } finally spark.stop()
+  }
+}

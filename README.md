@@ -20,6 +20,7 @@ Repo: [aoelvp94/airflow-scala-spark-demo](https://github.com/aoelvp94/airflow-sc
 | JVM in the image | Temurin 17 JRE copied from `eclipse-temurin:17-jre` (multi-stage). The Airflow image has no JRE |
 | Classloader isolation | None. JavaCoordinator puts every jar of the bundle on one flat `-classpath`, so Spark's and the SDK's dependencies share it, hence the Jackson clash. One coordinator plus one Dag bundle per classpath is the isolation unit |
 | spark-daria 1.2.4 on Spark 4.3.0 `local[*]` (`camelCaseToSnakeCaseColumns`, `DariaValidator`, `composeTransforms`, `singleSpace`, `ColumnExt.isTruthy`) | ✅ compiles and runs; unit tests, a 20M-row local bench, and end-to-end on Airflow 3.4 (`scala_spark_daria`, `scala_native_daria`, and bench modes (d1)–(d3) in BENCH.md) |
+| Scala ingest of a paginated HTTP JSON source → Parquet bronze, then a spark-daria bronze-to-silver transform (`scala_spark_ingest_transform`, `scala_native_ingest_transform`) | ✅ both Dags succeeded on Airflow 3.4; unit tests cover a missing-column failure; the same transform is compared with plain Spark and PySpark in BENCH.md |
 
 Versions: Airflow 3.4.0, Task SDK 1.4.0, Java SDK 1.0.0 (Maven Central, 2026-11-13), Scala 2.13.18, sbt 1.13.1, Spark/pyspark 4.3.0, spark-daria 1.2.4, Temurin 17.0.x (Astro image) / Temurin 21.0.13 (local sbt when Docker is down), Astro CLI 1.47.0.
 
@@ -35,15 +36,18 @@ scala-job/                      sbt project (Scala 2.13, Spark 4.3.0, airflow-sd
     NativeDag.scala             Dags declared in Scala with DagDef (`scala_native_spark`, `scala_native_daria`)
     DariaWorkload.scala         spark-daria pipeline and the equivalent plain-Spark path
     DariaBench.scala            local spark-daria vs plain Spark benchmark
+    Pipeline.scala              HTTP ingest to Parquet bronze, spark-daria / plain silver transform
+    PipelineBench.scala         local bench: spark-daria vs plain Spark on the same bronze
+    PipelineInspect.scala       print bronze/silver samples and the missing-column error
     Main.scala                  Bundle registration, BundleMain (Server), SubmitApp (spark-submit entry)
   src/main/resources/log4j2.xml AirflowAppender routing
-  src/test/scala/...            ScalaTest coverage for the spark-daria path on Spark 4.3
+  src/test/scala/...            ScalaTest coverage for the spark-daria path and the ingest/transform pipeline
 astro/                          Astro CLI project
   Dockerfile                    apache/airflow:3.4.0-python3.12 + Temurin 17 JRE + Astro workarounds
   requirements.txt              pyspark==4.3.0, apache-airflow-providers-apache-spark
   .env                          [sdk] coordinators / queue_to_coordinator, dag bundles, spark_local connection
   docker-compose.override.yml   host networking on this box (bridge traffic is blocked here), ports 56432/58280
-  dags/                         scala_spark_stub_etl.py, scala_spark_daria.py, scala_sdk_xcom_ergonomics.py, bench_dags.py
+  dags/                         scala_spark_stub_etl.py, scala_spark_daria.py, scala_spark_ingest_transform.py, scala_sdk_xcom_ergonomics.py, bench_dags.py
   include/scala-bundle/         thin bundle (197 jars, includes spark-daria 1.2.4) = Dag bundle "scala-spark"
   include/spark-submit/         scala-spark-workload.jar plus spark-daria_2.13-1.2.4.jar (Spark provided)
 bench/af.py, bench/bench.py, bench/make_bench_md.py
@@ -72,6 +76,25 @@ Through Airflow (fresh JVM per task, 7 rounds, median queued→end): spark-daria
 ./sbt.sh -batch 'runMain example.scalaspark.DariaBench ../bench/daria-local.json'
 ```
 
+## Ingest and transform
+
+`scala_spark_ingest_transform` and the native `scala_native_ingest_transform` Dag are a small bronze/silver pipeline, not a microbenchmark.
+
+1. **Ingest** starts a process-local paginated HTTP JSON API (JDK `HttpServer` on `127.0.0.1`), walks every page, and writes the raw records as Parquet bronze. The source is deterministic and messy on purpose: mixed-case and spaced column names (`OrderID`, `Customer Name`, `AMOUNT_USD`, …), string-typed amounts and dates, nulls, and exact duplicates (5%).
+2. **Transform** uses spark-daria 1.2.4: `validatePresenceOfColumns` on the bronze names, `snakifyColumns` plus `snakeCaseColumns`, then `composeTransforms` to trim, parse and cast, `dropDuplicates("order_id")`, and `validateSchema` on the silver types. A missing bronze column fails with `MissingDataFrameColumnsException`.
+
+The same transform is implemented in plain Spark Scala and in PySpark. A local bench on a shared 210,000-row bronze snapshot (200,000 unique ids) compares correctness and timing; see `BENCH.md`.
+
+Bronze and silver land in `astro/include/pipeline/` so both tasks share a bind-mounted path. That directory is owned by the host user, while Airflow runs as uid 50000, so it has to be world-writable. `build-bundle.sh` runs `mkdir -p astro/include/pipeline && chmod 777 astro/include/pipeline`.
+
+```bash
+./sbt.sh -batch test
+./sbt.sh -batch 'runMain example.scalaspark.PipelineInspect'
+PIPELINE_ROWS=200000 ./sbt.sh -batch 'runMain example.scalaspark.PipelineBench ../bench/pipeline-local.json /tmp/pipeline/bench/bronze'
+PIPELINE_BRONZE=/tmp/pipeline/bench/bronze PIPELINE_CHECKSUM=69569679071 \
+  uv run --no-project --with 'pyspark==4.3.0' python bench/pipeline_pyspark.py
+```
+
 ## Coordinator config (from `astro/.env`)
 
 ```
@@ -87,7 +110,7 @@ AIRFLOW__DAG_PROCESSOR__DAG_BUNDLE_CONFIG_LIST=[{"name":"dags-folder",...},{"nam
 ./build-bundle.sh                                   # sbt in Docker, or local sbt if Docker is down → astro/include
 cd astro && astro dev start --no-browser --wait 3m  # UI/API on http://localhost:58280 (override file)
 cd ../bench
-uv run --no-project python af.py scala_spark_stub_etl scala_native_spark scala_spark_daria scala_native_daria scala_sdk_xcom_ergonomics
+uv run --no-project python af.py scala_spark_stub_etl scala_native_spark scala_spark_daria scala_native_daria scala_spark_ingest_transform scala_native_ingest_transform scala_sdk_xcom_ergonomics
 BENCH_RUNS=7 BENCH_WARMUP=1 uv run --no-project python bench.py bench.json
 uv run --no-project python make_bench_md.py bench.json
 cd ../astro && astro dev kill                       # teardown (containers + volumes)

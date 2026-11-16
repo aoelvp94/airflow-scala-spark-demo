@@ -23,6 +23,9 @@ object ScalaBundle {
       .register("bench_scala_plain_java_sdk", "workload", classOf[SparkPlainWorkload])
       .register(NativeDag.build())
       .register(DariaNativeDag.build())
+      .register("scala_spark_ingest_transform", "ingest", classOf[SparkIngest])
+      .register("scala_spark_ingest_transform", "transform", classOf[SparkTransform])
+      .register(IngestTransformNativeDag.build())
 }
 
 object BundleMain {

@@ -53,3 +53,33 @@ object DariaNativeDag {
     dag
   }
 }
+
+class CheckIngestTransform extends Task {
+  private val log: Logger = LogManager.getLogger(classOf[CheckIngestTransform])
+
+  override def execute(context: Context, client: Client): Unit = {
+    val m = client.getXCom("transform").asInstanceOf[java.util.Map[String, Any]].asScala
+    log.info("Native ingest/transform Dag got {}", m)
+    require(m("silver_rows").asInstanceOf[Number].longValue() == Pipeline.DefaultUniqueRows)
+    require(m("bronze_rows").asInstanceOf[Number].longValue() == Pipeline.bronzeCount(Pipeline.DefaultUniqueRows))
+  }
+}
+
+object IngestTransformNativeDag {
+  def build(): DagDef = {
+    val dag = new DagDef("scala_native_ingest_transform")
+      .config(
+        "description",
+        "Native Scala Dag: ingest messy orders from a paginated HTTP API, then transform bronze to silver with spark-daria"
+      )
+      .config("queue", "scala")
+      .config("catchup", false)
+      .config("tags", Seq("scala", "spark", "daria", "ingest", "native").asJava)
+    val ingest = dag.task("ingest", classOf[SparkIngest])
+    val transform = dag.task("transform", classOf[SparkTransform])
+    val check = dag.task("check", classOf[CheckIngestTransform])
+    transform.after(ingest)
+    check.after(transform)
+    dag
+  }
+}

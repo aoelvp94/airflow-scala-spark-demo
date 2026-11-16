@@ -109,3 +109,46 @@ The session is reused on purpose: the comparison is library overhead, not JVM or
 ```
 
 `sbt.sh` uses Docker when it is available, or a local JDK and sbt if it is not. Raw data is in `bench/daria-local.json` and in the `daria_local` key of `bench.json`.
+
+## Ingest and transform (bronze → silver)
+
+Run on 2026-11-16 at 21:43–21:49 (Asia/Tbilisi, UTC+4), on the box, Spark 4.3.0 `local[*]`, spark-daria 1.2.4, Temurin 21.0.13 for the local bench and Temurin 17 in the Airflow image.
+
+This is a different workload from the 20M-row aggregate above. A deterministic fake orders API produces 200,000 unique rows plus 10,000 exact duplicates (210,000 bronze rows). Column names are messy (`OrderID`, `Customer Name`, `emailAddress`, `AMOUNT_USD`, `Order Date`, …), amounts and dates are strings (including `"  1,681.67 "` and `dd/MM/yyyy`), and some fields are null. The transform validates the bronze columns, snake_cases the names, cleans and casts, drops duplicate `order_id`s, and writes 200,000 silver rows. Every measured run in every mode returned the same checksum `69569679071`.
+
+Modes, all on the same bronze snapshot at `/tmp/pipeline/bench/bronze`:
+
+- **spark-daria** and **plain Spark** were interleaved in one shared `SparkSession` (`PipelineBench`, 1 warm-up + 7 measured rounds). The comparison is library overhead, not JVM or session start (1.43 s once).
+- **PySpark** ran afterwards in its own session (`bench/pipeline_pyspark.py`, 1 warm-up + 7 measured), implementing the same plain transform. Do not treat the PySpark median as a perfectly interleaved peer of the two Scala modes.
+
+| Mode | n | Spark compute (ms) | Silver rows | Checksum |
+|---|---|---|---|---|
+| spark-daria 1.2.4 (`validatePresenceOfColumns`, `snakifyColumns`, `snakeCaseColumns`, `composeTransforms`, `validateSchema`) | 7 | 676 (min 582, max 952) | 200,000 | 69569679071 |
+| plain Spark Scala (same renames, checks, casts and dedupe) | 7 | 640 (min 586, max 894) | 200,000 | 69569679071 |
+| PySpark (same plain transform) | 7 | 764 (min 725, max 1263) | 200,000 | 69569679071 |
+
+The 36 ms spark-daria vs plain Spark gap is small and inside the overlap of the ranges. PySpark was a bit slower on this transform, still with an identical checksum.
+
+End-to-end on Airflow 3.4 (Java SDK, one run each, 2,000 unique rows / 2,100 bronze rows, checksum `115357809`), after `astro dev start -i airflow-scala-spark-local:latest` with host networking:
+
+| Dag | ingest | transform | check |
+|---|---|---|---|
+| `scala_spark_ingest_transform` (`@task.stub`, ingest >> transform) | 6.86 s | 9.18 s | — |
+| `scala_native_ingest_transform` (Scala `DagDef`) | 7.82 s | 8.66 s | 0.62 s |
+
+The first attempt of the stub Dag failed with `AccessDeniedException: /usr/local/airflow/include/pipeline` because that bind mount is owned by uid 1000 and Airflow runs as uid 50000. Creating the directory world-writable (`build-bundle.sh` now does this) fixed it; the successful runs above are after that fix.
+
+### Reproduce
+
+```bash
+./sbt.sh -batch test
+PIPELINE_ROWS=200000 ./sbt.sh -batch 'runMain example.scalaspark.PipelineBench ../bench/pipeline-local.json /tmp/pipeline/bench/bronze'
+PIPELINE_BRONZE=/tmp/pipeline/bench/bronze PIPELINE_CHECKSUM=69569679071 \
+  uv run --no-project --with 'pyspark==4.3.0' python bench/pipeline_pyspark.py
+./build-bundle.sh
+cd astro && astro dev start --no-browser --wait 20s -i airflow-scala-spark-local:latest; cd ../bench
+uv run --no-project python af.py scala_spark_ingest_transform scala_native_ingest_transform
+cd ../astro && astro dev kill
+```
+
+Raw data is in `bench/pipeline-local.json`, `bench/pipeline-pyspark.json`, and the `pipeline` key of `bench.json`.
