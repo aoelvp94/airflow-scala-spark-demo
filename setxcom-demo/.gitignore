@@ -1,0 +1,8 @@
+build/
+bundle-baseline/
+bundle-patched/
+scala-src/target/
+scala-src/project/target/
+evidence/*.db
+evidence/logs-*/
+.cache/

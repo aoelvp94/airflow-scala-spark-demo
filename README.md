@@ -9,7 +9,7 @@ Repo: [aoelvp94/airflow-scala-spark-demo](https://github.com/aoelvp94/airflow-sc
 | Python Dag with `@task.stub(queue="scala")` → Scala `Task` classes running Spark 4.3.0 `local[*]` in the task JVM (`scala_spark_stub_etl`) | ✅ success, XCom passed between JVM tasks |
 | Native Dag declared **in Scala** with `DagDef` and parsed by the dag-processor from the bundle jar (`scala_native_spark`) | ✅ parsed and ran (`workload` → `check`) |
 | Task logs: Log4j 2 through `airflow-sdk-log4j2` `AirflowAppender`, plus `println` and `System.err` | ✅ all in the task log (stderr lines are logged at level `error`) |
-| XCom from Scala types (`scala_sdk_xcom_ergonomics`) | ⚠️ the tasks succeed, but Scala `Map`/`Seq`/`Option`/case class are stored as bean garbage or `{}`. `java.util` collections work (ISSUES.md #2) |
+| XCom from Scala types (`scala_sdk_xcom_ergonomics`) | ⚠️ the tasks succeed, but Scala `Map`/`Seq`/`Option`/case class are stored as bean garbage or `{}`. `java.util` collections work (ISSUES.md #2). A standalone reviewer demo of a proposed loud-failure fix is in [`setxcom-demo/`](setxcom-demo/) |
 | Same jar via `spark-submit` (BashOperator and SparkSubmitOperator) and the same workload as a PySpark `@task` | ✅ |
 | sbt build with SDK 1.0.0 + Spark 4.3.0 or 3.5.9, no overrides | ❌ `Scala module 2.21.2 requires Jackson Databind version >= 2.21.0 and < 2.22.0` (ISSUES.md #1). Fixed with `dependencyOverrides` on `jackson-module-scala` 2.22.2 (or databind back down to 2.21.2) |
 | Gradle (upstream `scala_spark_example`) dependency resolution | ✅ Jackson's BOM alignment lifts `jackson-module-scala` to 2.22.2 |
@@ -54,6 +54,7 @@ astro/                          Astro CLI project
 bench/af.py, bench/bench.py, bench/make_bench_md.py
 BENCH.md, bench.json            benchmark
 ISSUES.md                       paste-ready issue drafts (not posted)
+setxcom-demo/                   reviewer demo of a proposed Java SDK setXCom loud-failure fix
 experiments/                    sbt variants (Spark 3.5.9/4.3.0 × Jackson alignment, fat jar), upstream Gradle resolution check
 ref/                            read-only clones of aoelvp94/airflow-java-dag-demo, aoelvp94/airflow-go-dag-demo + upstream files
 spark-jvm-opts.txt              Spark 4.3.0 JavaModuleOptions, used as coordinator jvm_args

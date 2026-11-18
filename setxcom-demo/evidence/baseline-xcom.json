@@ -1,0 +1,104 @@
+{
+  "mode": "baseline",
+  "dag_id": "setxcom_fix",
+  "run_id": "reviewer_demo_baseline_20261118T201448",
+  "dag_state": "success",
+  "start_date_tbilisi": "2026-11-18 20:14:53 Asia/Tbilisi (UTC+4)",
+  "end_date_tbilisi": "2026-11-18 20:15:00 Asia/Tbilisi (UTC+4)",
+  "tasks": [
+    {
+      "task_id": "extract",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": 42,
+      "error": null
+    },
+    {
+      "task_id": "score",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "region": "eu",
+        "threshold": 0.5
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_as_java",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "region": "eu",
+        "threshold": 0.5
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_java_pojo",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "region": "eu",
+        "threshold": 0.5
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_scala_map",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "scala$collection$immutable$Map$Map2$$key1": "region",
+        "scala$collection$immutable$Map$Map2$$value1": "eu",
+        "scala$collection$immutable$Map$Map2$$key2": "threshold",
+        "scala$collection$immutable$Map$Map2$$value2": 0.5,
+        "empty": false,
+        "traversableAgain": true
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_scala_seq",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "empty": false,
+        "traversableAgain": true
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_scala_option",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "empty": false,
+        "defined": true
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_case_class",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:14:55 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:14:59 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {},
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+ThisBuild / scalaVersion := "2.13.18"
+
+val airflowSdkVersion = "1.0.0"
+val bundleMainClass = "com.mycompany.airflow.hello.Main"
+
+lazy val bundle = taskKey[File]("Write a thin Java SDK bundle directory")
+
+lazy val root = (project in file("."))
+  .settings(
+    name := "setxcom-reviewer-demo",
+    javacOptions ++= Seq("--release", "17"),
+    scalacOptions ++= Seq("-release", "17"),
+    libraryDependencies += "org.apache.airflow" % "airflow-sdk" % airflowSdkVersion,
+    Compile / mainClass := Some(bundleMainClass),
+    Compile / packageBin / packageOptions += Package.ManifestAttributes(
+      "Main-Class" -> bundleMainClass
+    ),
+    bundle := {
+      val out = target.value / "bundle"
+      IO.delete(out)
+      IO.createDirectory(out)
+      val app = (Compile / packageBin).value
+      IO.copyFile(app, out / app.getName)
+      (Runtime / fullClasspathAsJars).value
+        .map(_.data)
+        .filter(j => j.getName.endsWith(".jar") && j != app)
+        .foreach(j => IO.copyFile(j, out / j.getName))
+      out
+    },
+  )

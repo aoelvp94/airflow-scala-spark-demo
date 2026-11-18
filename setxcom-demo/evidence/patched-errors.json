@@ -1,0 +1,6 @@
+{
+  "push_case_class": "java.lang.IllegalArgumentException: Unsupported XCom value type: com.mycompany.airflow.hello.ScoreSummary. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list.",
+  "push_scala_map": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.collection.immutable.Map$Map2. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list.",
+  "push_scala_seq": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.collection.immutable.$colon$colon. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list.",
+  "push_scala_option": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.Some. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+}

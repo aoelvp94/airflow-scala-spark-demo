@@ -1,0 +1,91 @@
+{
+  "mode": "patched",
+  "dag_id": "setxcom_fix",
+  "run_id": "reviewer_demo_patched_20261118T201520",
+  "dag_state": "failed",
+  "start_date_tbilisi": "2026-11-18 20:15:25 Asia/Tbilisi (UTC+4)",
+  "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+  "tasks": [
+    {
+      "task_id": "extract",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": 42,
+      "error": null
+    },
+    {
+      "task_id": "score",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "region": "eu",
+        "threshold": 0.5
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_as_java",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:15:25 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "region": "eu",
+        "threshold": 0.5
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_java_pojo",
+      "state": "success",
+      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "region": "eu",
+        "threshold": 0.5
+      },
+      "error": null
+    },
+    {
+      "task_id": "push_scala_map",
+      "state": "failed",
+      "start_date_tbilisi": "2026-11-18 20:15:25 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": null,
+      "xcom_value": null,
+      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.collection.immutable.Map$Map2. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+    },
+    {
+      "task_id": "push_scala_seq",
+      "state": "failed",
+      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": null,
+      "xcom_value": null,
+      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.collection.immutable.$colon$colon. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+    },
+    {
+      "task_id": "push_scala_option",
+      "state": "failed",
+      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "xcom_key": null,
+      "xcom_value": null,
+      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.Some. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+    },
+    {
+      "task_id": "push_case_class",
+      "state": "failed",
+      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-18 20:15:29 Asia/Tbilisi (UTC+4)",
+      "xcom_key": null,
+      "xcom_value": null,
+      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: com.mycompany.airflow.hello.ScoreSummary. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+    }
+  ]
+}
