@@ -35,6 +35,10 @@ def push_scala_option(): ...
 def push_case_class(): ...
 
 
+@task.stub(queue="java")
+def push_empty_object(): ...
+
+
 @dag(dag_id="setxcom_fix", schedule=None, catchup=False, tags=["scala", "setxcom-fix-e2e"])
 def setxcom_fix():
     # Independent tasks so a rejection does not skip the controls.
@@ -46,6 +50,7 @@ def setxcom_fix():
     push_scala_seq()
     push_scala_option()
     push_case_class()
+    push_empty_object()
 
 
 setxcom_fix()

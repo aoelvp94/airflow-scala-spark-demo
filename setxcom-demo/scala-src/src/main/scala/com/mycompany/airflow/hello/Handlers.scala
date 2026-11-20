@@ -50,6 +50,11 @@ class PushCaseClass extends Task {
     client.setXCom(ScoreSummary("eu", 0.5))
 }
 
+class PushEmptyObject extends Task {
+  override def execute(context: Context, client: Client): Unit =
+    client.setXCom(new EmptyMarker())
+}
+
 object Main {
   def main(args: Array[String]): Unit =
     Server.create(args).serve(
@@ -62,5 +67,6 @@ object Main {
         .register("setxcom_fix", "push_scala_seq", classOf[PushScalaSeq])
         .register("setxcom_fix", "push_scala_option", classOf[PushScalaOption])
         .register("setxcom_fix", "push_case_class", classOf[PushCaseClass])
+        .register("setxcom_fix", "push_empty_object", classOf[PushEmptyObject])
     )
 }

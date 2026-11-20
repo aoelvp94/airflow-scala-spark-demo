@@ -1,0 +1,1 @@
+[{"dag_id": "setxcom_fix", "run_id": "reviewer_demo_patched_scala_20261120T221403", "state": "failed", "run_after": "2026-11-20T18:15:42.667102+00:00", "logical_date": "", "start_date": "2026-11-20T18:15:43.749157+00:00", "end_date": "2026-11-20T18:16:25.316448+00:00"}]

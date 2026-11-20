@@ -20,7 +20,7 @@ detect_airflow_src() {
     "$DEMO_ROOT/../airflow-verify" \
     "$DEMO_ROOT/../airflow-setxcom"
   do
-    if [[ -f "$c/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/JsonValue.kt" ]]; then
+    if grep -qs 'RejectEmptyBeans' "$c/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt"; then
       printf '%s\n' "$c"
       return
     fi

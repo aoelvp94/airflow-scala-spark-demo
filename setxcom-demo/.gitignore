@@ -1,8 +1,12 @@
 build/
 bundle-baseline/
+bundle-baseline-scala/
 bundle-patched/
+bundle-patched-scala/
 scala-src/target/
 scala-src/project/target/
 evidence/*.db
+evidence/*.db-wal
+evidence/*.db-shm
 evidence/logs-*/
 .cache/

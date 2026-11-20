@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
-# Overlay the setXCom loud-failure fix onto official airflow-sdk 1.0.0.
+# Overlay the setXCom encoding fix onto official airflow-sdk 1.0.0.
 #
 # Airflow 3.4.0 only knows supervisor schemas {2026-06-16, 2026-10-30} and
 # rejects the 1.1.0-SNAPSHOT schema (2027-02-28) from current main. The
 # published 1.0.0 jar already carries 2026-10-30, so this keeps that
-# manifest and compiles just the fixed Kotlin sources against it.
+# manifest and compiles only the fixed execution/Frame.kt against it.
 #
 # Requires: Docker (uses the same sbt/Temurin 17 image as the bundle), plus
-# AIRFLOW_SRC pointing at an apache/airflow checkout with the fix applied
-# (JsonValue.kt present). JsonValue.kt and Frame.kt are copied from that
-# checkout (they match 1.0.0 + the fix). execution/Client.kt is taken from
-# the 1.0.0 sources jar and only the setXCom / setTaskStateStore assignments
-# are changed to jsonValue(value), because main's Client.kt is not drop-in
-# compatible with 1.0.0 (getVariable signature).
+# AIRFLOW_SRC pointing at an apache/airflow checkout with the fix applied.
+# The fix lives entirely in Frame.kt, whose callers in 1.0.0 are unchanged.
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
@@ -21,9 +17,11 @@ AIRFLOW_SRC="$(detect_airflow_src)" || {
   exit 1
 }
 FIX_KT="$AIRFLOW_SRC/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution"
-for f in JsonValue.kt Frame.kt; do
-  [[ -f "$FIX_KT/$f" ]] || { echo "missing $FIX_KT/$f" >&2; exit 1; }
-done
+[[ -f "$FIX_KT/Frame.kt" ]] || { echo "missing $FIX_KT/Frame.kt" >&2; exit 1; }
+grep -q 'RejectEmptyBeans' "$FIX_KT/Frame.kt" || {
+  echo "$FIX_KT/Frame.kt does not contain the setXCom encoding fix" >&2
+  exit 1
+}
 
 BUNDLE="${1:-$DEMO_ROOT/bundle-baseline}"
 SDK_JAR="$BUNDLE/airflow-sdk-1.0.0.jar"
@@ -34,24 +32,6 @@ OUT_JAR="${OUT_JAR:-$DEMO_ROOT/build/airflow-sdk-1.0.0-setxcom.jar}"
 CACHE="$DEMO_ROOT/.cache/maven"
 mkdir -p "$WORK/src" "$WORK/classes" "$CACHE"
 
-SOURCES_JAR="$CACHE/airflow-sdk-1.0.0-sources.jar"
-if [[ ! -f "$SOURCES_JAR" ]]; then
-  echo "Downloading airflow-sdk 1.0.0 sources"
-  curl -fsSL -o "$SOURCES_JAR" \
-    https://repo1.maven.org/maven2/org/apache/airflow/airflow-sdk/1.0.0/airflow-sdk-1.0.0-sources.jar
-fi
-
-# 1.0.0 execution/Client.kt, then jsonValue() only on setXCom / setTaskStateStore.
-python3 - << PY
-import zipfile
-from pathlib import Path
-work = Path("$WORK/src")
-with zipfile.ZipFile("$SOURCES_JAR") as z:
-    data = z.read("org/apache/airflow/sdk/execution/Client.kt")
-(work / "Client.kt").write_bytes(data)
-PY
-python3 "$DEMO_ROOT/scripts/patch_client.py" "$WORK/src/Client.kt"
-cp "$FIX_KT/JsonValue.kt" "$WORK/src/JsonValue.kt"
 cp "$FIX_KT/Frame.kt" "$WORK/src/Frame.kt"
 
 # Compile inside the sbt image so reviewers only need Docker + the official jars
@@ -123,9 +103,7 @@ docker run --rm --network=host -u "$(id -u):$(id -g)" \
       -Xfriend-paths=/demo/build/overlay/cp/airflow-sdk-1.0.0.jar \
       -cp \"\$CP\" \
       -d /demo/build/overlay/classes \
-      /demo/build/overlay/src/JsonValue.kt \
-      /demo/build/overlay/src/Frame.kt \
-      /demo/build/overlay/src/Client.kt
+      /demo/build/overlay/src/Frame.kt
   "
 
 # Overlay only org/ classes; keep the official 1.0.0 manifest (schema 2026-10-30)
@@ -142,15 +120,20 @@ with zipfile.ZipFile(jar) as z:
     manifest = z.read("META-INF/MANIFEST.MF").decode()
     names = z.namelist()
 assert "Airflow-Supervisor-Schema-Version: 2026-10-30" in manifest, manifest
-assert "org/apache/airflow/sdk/execution/JsonValueKt.class" in names
+assert "org/apache/airflow/sdk/execution/RejectEmptyBeans.class" in names, "overlay is missing RejectEmptyBeans"
 print("Wrote $OUT_JAR")
 print("Manifest still has Airflow-Supervisor-Schema-Version: 2026-10-30")
 PY
 
-# Assemble the patched bundle from the baseline, swapping only the SDK jar.
-rm -rf "$DEMO_ROOT/bundle-patched"
-mkdir -p "$DEMO_ROOT/bundle-patched"
-cp -a "$DEMO_ROOT/bundle-baseline/." "$DEMO_ROOT/bundle-patched/"
-cp "$OUT_JAR" "$DEMO_ROOT/bundle-patched/airflow-sdk-1.0.0.jar"
-printf '*\n' > "$DEMO_ROOT/bundle-patched/.airflowignore"
-echo "Wrote $DEMO_ROOT/bundle-patched (airflow-sdk-1.0.0.jar replaced with the overlay)"
+# Assemble the patched bundles from the baselines, swapping only the SDK jar.
+for variant in "" "-scala"; do
+  src="$DEMO_ROOT/bundle-baseline$variant"
+  dst="$DEMO_ROOT/bundle-patched$variant"
+  [[ -d "$src" ]] || { echo "missing $src; run make bundle" >&2; exit 1; }
+  rm -rf "$dst"
+  mkdir -p "$dst"
+  cp -a "$src/." "$dst/"
+  cp "$OUT_JAR" "$dst/airflow-sdk-1.0.0.jar"
+  printf '*\n' > "$dst/.airflowignore"
+  echo "Wrote $dst (airflow-sdk-1.0.0.jar replaced with the overlay)"
+done

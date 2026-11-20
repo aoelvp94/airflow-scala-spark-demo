@@ -1,0 +1,3 @@
+{
+  "push_empty_object": "java.lang.IllegalArgumentException: Cannot send com.mycompany.airflow.hello.EmptyMarker to Airflow: Jackson finds no properties to encode, so it would be stored as {}. Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type to the bundle (jackson-module-scala for Scala collections, Option and case classes)."
+}

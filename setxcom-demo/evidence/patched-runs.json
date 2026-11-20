@@ -1,1 +1,1 @@
-[{"dag_id": "setxcom_fix", "run_id": "reviewer_demo_patched_20261118T201520", "state": "failed", "run_after": "2026-11-18T16:15:24.443979+00:00", "logical_date": "", "start_date": "2026-11-18T16:15:25.251288+00:00", "end_date": "2026-11-18T16:15:30.247676+00:00"}]
+[{"dag_id": "setxcom_fix", "run_id": "reviewer_demo_patched_20261120T221221", "state": "failed", "run_after": "2026-11-20T18:12:26.134120+00:00", "logical_date": "", "start_date": "2026-11-20T18:12:27.866164+00:00", "end_date": "2026-11-20T18:13:00.320949+00:00"}]

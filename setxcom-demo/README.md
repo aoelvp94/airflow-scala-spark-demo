@@ -1,49 +1,46 @@
-# Reviewer demo: fail loudly on Scala types in `setXCom`
+# Reviewer demo: encoding `setXCom` values with Jackson modules
 
-This directory (`setxcom-demo/`) is a self-contained demo of a proposed
-Java SDK change that rejects a Scala `Map`, `Seq`, `Option` or case class
-in `setXCom` with `IllegalArgumentException`, while leaving Java-friendly
-values unchanged.
+This directory (`setxcom-demo/`) is a self-contained demo of a proposed Java SDK
+change to how `setXCom` (and the task-state store) encode a value:
 
-Run every command below from this directory. The copies of the proposed
-patches are in `patches/` (they apply on Apache Airflow `main` at
-`9eb25f92`; see `patches/README.md`). Upstream PRs have not been opened
-yet; replace the placeholder below once they exist:
+- The value is encoded with Jackson and every Jackson module in the bundle. With
+  `jackson-module-scala` on the classpath, as in any Spark bundle, a Scala `Map`,
+  `Seq`, `Option` or case class is stored as real JSON.
+- An object Jackson finds no properties for is rejected with
+  `IllegalArgumentException` instead of being stored as `{}`.
+- Java values (maps from `.asJava`, beans, boxed numbers) are stored as before.
 
-- setXCom loud-failure PR: *not opened yet*
-- Scala docs PR: *not opened yet*
+Run every command below from this directory. The proposed patches are in
+`patches/` and apply on Apache Airflow `main` at `943c8ffceb`; see
+`patches/README.md`. The fix is under review in
+[apache/airflow#77249](https://github.com/apache/airflow/pull/77249).
 
 ## Why the fix is overlaid on `airflow-sdk` 1.0.0
 
 Airflow 3.4.0's Java coordinator only knows supervisor schemas `2026-06-16`
 and `2026-10-30`. A current `main` build of the SDK is `1.1.0-SNAPSHOT` and
-advertises schema `2027-02-28`, which 3.4.0 rejects. Official
-`airflow-sdk` 1.0.0 already carries `2026-10-30`, so this demo compiles the
-fixed Kotlin sources against that released jar and leaves the manifest alone.
+advertises schema `2027-02-28`, which 3.4.0 rejects. Official `airflow-sdk`
+1.0.0 already carries `2026-10-30`, so this demo compiles the fixed
+`execution/Frame.kt` against that released jar and leaves the manifest alone.
+The fix lives entirely in `Frame.kt`, and its 1.0.0 callers are unchanged.
 
 ## Prerequisites
 
 - Docker, with permission to run containers
-- An `apache/airflow` checkout with the setXCom loud-failure patch applied.
-  From a clean tree at `9eb25f92` (or the upstream PR branch, once it exists):
+- An `apache/airflow` checkout with the fix applied (see `patches/README.md`):
 
   ```bash
-  git apply /path/to/airflow-scala-spark-demo/setxcom-demo/patches/setxcom-loud-failure.patch
-  # optional, docs only:
-  git apply /path/to/airflow-scala-spark-demo/setxcom-demo/patches/scala-docs.patch
   export AIRFLOW_SRC=/path/to/apache/airflow
   ```
-- Network on the first run (Maven Central for `airflow-sdk` 1.0.0, and a
-  one-time `kotlinc` 2.4.20 download used by the overlay script)
+- Network on the first run (Maven Central for `airflow-sdk` 1.0.0 and
+  `jackson-module-scala` 2.22.2, and a one-time `kotlinc` 2.4.20 download used by
+  the overlay script)
 - Roughly 4 GB for the `apache/airflow:3.4.0-python3.12` image plus a Temurin 17 JRE
 
-A JDK is **not** required on the host for the Airflow runs. To run the SDK
-unit tests in step 8 you need JDK 11+ (17 is fine) and the Gradle wrapper in
-that checkout.
+No JDK is needed on the host for the Airflow runs. The SDK unit tests in step 9
+need the Gradle wrapper in that checkout and JDK 17 or 21 to run Gradle.
 
 ## 1. Build the Airflow image
-
-From this directory:
 
 ```bash
 docker build -t airflow-scala-docs-e2e:3.4.0 -f Dockerfile .
@@ -52,102 +49,134 @@ docker build -t airflow-scala-docs-e2e:3.4.0 -f Dockerfile .
 The Dockerfile is `FROM apache/airflow:3.4.0-python3.12` plus a Temurin 17 JRE,
 which the Java coordinator needs.
 
-## 2. Point at the fix
-
-```bash
-export AIRFLOW_SRC=/path/to/apache/airflow   # checkout with the setXCom fix applied (see Prerequisites)
-```
-
-If you leave `AIRFLOW_SRC` unset, the overlay script also looks for a few
-local worktrees (`airflow-verify`, `airflow-setxcom`) next to this repo, when
-they exist.
-
-## 3. Build the Scala handler bundle (official 1.0.0)
+## 2. Build the Scala handler bundles (official 1.0.0)
 
 ```bash
 make bundle
 ```
 
 This compiles the handlers against published `airflow-sdk` 1.0.0 (Scala 2.13.18,
-inside `sbtscala/scala-sbt:eclipse-temurin-17.0.21_9_1.13.1_2.13.18`) and writes
-`bundle-baseline/`. The application JAR and the official SDK jar both stay in
-that bundle for the baseline run.
+inside `sbtscala/scala-sbt:eclipse-temurin-17.0.21_9_1.13.1_2.13.18`) twice:
 
-## 4. Overlay the fix onto 1.0.0
+- `bundle-baseline/`: the handlers and their runtime jars
+- `bundle-baseline-scala/`: the same plus `jackson-module-scala_2.13` 2.22.2, which
+  matches the 1.0.0 SDK's `jackson-databind` 2.22.2
+
+## 3. Overlay the fix onto 1.0.0
 
 ```bash
 make overlay
 ```
 
-This downloads the 1.0.0 sources jar, copies `JsonValue.kt` and `Frame.kt` from
-`$AIRFLOW_SRC`, patches only `setXCom` / `setTaskStateStore` in the 1.0.0
-`execution/Client.kt` to call `jsonValue(...)`, compiles those three files
-against the official 1.0.0 jar (`-module-name org.apache.airflow_sdk`,
-`-Xfriend-paths`), and overlays the new classes onto a copy of the official
-jar. The manifest still has `Airflow-Supervisor-Schema-Version: 2026-10-30`.
+This copies `execution/Frame.kt` from `$AIRFLOW_SRC`, compiles it against the
+official 1.0.0 jar (`-module-name org.apache.airflow_sdk`, `-Xfriend-paths`), and
+overlays the new classes onto a copy of that jar. The manifest still has
+`Airflow-Supervisor-Schema-Version: 2026-10-30`.
 
-Output: `build/airflow-sdk-1.0.0-setxcom.jar` and `bundle-patched/` (the same
-application jars as the baseline, with only `airflow-sdk-1.0.0.jar` replaced).
+Output: `build/airflow-sdk-1.0.0-setxcom.jar`, plus `bundle-patched/` and
+`bundle-patched-scala/`, which are the two baseline bundles with only
+`airflow-sdk-1.0.0.jar` replaced.
 
-## 5. Run the baseline (unpatched 1.0.0)
+## 4. What the Dag does
+
+Nine independent `@task.stub(queue="java")` tasks in `setxcom_fix`, so one
+failure does not skip the others:
+
+| task | value pushed |
+|---|---|
+| `extract` | boxed long `42` |
+| `score` | `Map("region" -> input.region, "threshold" -> input.threshold).asJava` |
+| `push_as_java` | `Map("region" -> "eu", "threshold" -> 0.5).asJava` |
+| `push_java_pojo` | Java bean `ScoreSummaryBean` with `getRegion` / `getThreshold` |
+| `push_scala_map` | Scala `Map("region" -> "eu", "threshold" -> 0.5)` |
+| `push_scala_seq` | Scala `Seq(1, 2, 3)` |
+| `push_scala_option` | `Some("eu")` |
+| `push_case_class` | `ScoreSummary("eu", 0.5)` |
+| `push_empty_object` | Java `EmptyMarker`, a class with no properties |
+
+Each run is standalone Airflow 3.4.0 with LocalExecutor and `JavaCoordinator`
+(`task_handler_bundle_name=java-handlers`,
+`main_class=com.mycompany.airflow.hello.Main`). Parallelism is capped at 3: with
+nine JVM tasks starting at once on a busy machine, the standalone API server can
+miss a task's first call, which fails it with "Could not reach the Execution API
+server" before any task code runs. Every run ends in **failed**
+because at least one task fails on purpose; read the per-task results.
+
+## 5. Baseline: unpatched 1.0.0
 
 ```bash
 make baseline
 ```
 
-Standalone Airflow 3.4.0, LocalExecutor, `JavaCoordinator`,
-`task_handler_bundle_name=java-handlers`,
-`main_class=com.mycompany.airflow.hello.Main`. The DAG is `setxcom_fix`.
-The run script makes the host-mounted log directory writable by the
-image user (uid 50000).
+| task | state | XCom `return_value` |
+|---|---|---|
+| `extract` | success | `42` |
+| `score`, `push_as_java`, `push_java_pojo` | success | `{"region": "eu", "threshold": 0.5}` |
+| `push_scala_map` | success | `{"scala$collection$immutable$Map$Map2$$key1": "region", "scala$collection$immutable$Map$Map2$$value1": "eu", …, "empty": false, "traversableAgain": true}` |
+| `push_scala_seq` | success | `{"empty": false, "traversableAgain": true}` |
+| `push_scala_option` | success | `{"empty": false, "defined": true}` |
+| `push_case_class` | success | `{}` |
+| `push_empty_object` | failed | none |
 
-**Expected:** the DAG ends in **success**. All eight tasks succeed.
+The Scala tasks succeed and store bean properties or `{}`: that silent store is
+the bug. The empty Java object already fails, but with Jackson's raw message:
 
-| task | expected XCom `return_value` |
-|---|---|
-| `extract` | `42` |
-| `score` | `{"region": "eu", "threshold": 0.5}` |
-| `push_as_java` | `{"region": "eu", "threshold": 0.5}` |
-| `push_java_pojo` | `{"region": "eu", "threshold": 0.5}` |
-| `push_scala_map` | bean garbage: `scala$collection$immutable$Map$Map2$$key1/value1/key2/value2`, plus `empty` / `traversableAgain` |
-| `push_scala_seq` | `{"empty": false, "traversableAgain": true}` |
-| `push_scala_option` | `{"empty": false, "defined": true}` |
-| `push_case_class` | `{}` |
+```
+java.lang.IllegalArgumentException: No serializer found for class com.mycompany.airflow.hello.EmptyMarker and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS) (through reference chain: org.apache.airflow.sdk.execution.comm.SetXCom["value"])
+```
 
-The Scala tasks do **not** fail on an unpatched 1.0.0 SDK. That silent store is
-the bug.
+Jackson fails like this only for classes without annotations. Every Scala class
+carries `@ScalaSignature` (and every Kotlin class `@Metadata`), and an empty
+annotated class is written as `{}` instead, which is why the case class slips
+through.
 
-## 6. Run the patched SDK
+## 6. Patched, without `jackson-module-scala`
 
 ```bash
 make patched
 ```
 
-Same DAG and the same application jars; only the SDK jar is the overlay from
-step 4.
+| task | state | XCom `return_value` |
+|---|---|---|
+| `extract` | success | `42` |
+| `score`, `push_as_java`, `push_java_pojo` | success | `{"region": "eu", "threshold": 0.5}` |
+| `push_scala_map`, `push_scala_seq`, `push_scala_option` | success | same bean properties as the baseline |
+| `push_case_class` | failed | none |
+| `push_empty_object` | failed | none |
 
-**Expected:** the DAG ends in **failed**. The four control tasks succeed with
-the **same** XCom values as the baseline (`42` and
-`{"region": "eu", "threshold": 0.5}`). The four Scala tasks fail and write
-**no** XCom.
-
-The task log error is:
+Both failures now carry the same message, for example:
 
 ```
-java.lang.IllegalArgumentException: Unsupported XCom value type: <type>. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list.
+java.lang.IllegalArgumentException: Cannot send com.mycompany.airflow.hello.ScoreSummary to Airflow: Jackson finds no properties to encode, so it would be stored as {}. Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type to the bundle (jackson-module-scala for Scala collections, Option and case classes).
 ```
 
-| task | `<type>` in the message |
-|---|---|
-| `push_scala_map` | `scala.collection.immutable.Map$Map2` |
-| `push_scala_seq` | `scala.collection.immutable.$colon$colon` |
-| `push_scala_option` | `scala.Some` |
-| `push_case_class` | `com.mycompany.airflow.hello.ScoreSummary` |
+Without the module, Scala collections and `Option` still have bean properties
+(`empty`, `traversableAgain`, `defined`), so Jackson stores those. That is the
+known limit of a fix that does not special-case Scala.
 
-`ScoreSummary` is a user case class (not a `scala.*` name). It is still
-rejected because it implements `scala.Product`.
+## 7. Patched, with `jackson-module-scala`
 
-## 7. Read the evidence
+```bash
+make patched-scala
+```
+
+| task | state | XCom `return_value` |
+|---|---|---|
+| `extract` | success | `42` |
+| `score`, `push_as_java`, `push_java_pojo` | success | `{"region": "eu", "threshold": 0.5}` |
+| `push_scala_map` | success | `{"region": "eu", "threshold": 0.5}` |
+| `push_scala_seq` | success | `[1, 2, 3]` |
+| `push_scala_option` | success | `"eu"` |
+| `push_case_class` | success | `{"region": "eu", "threshold": 0.5}` |
+| `push_empty_object` | failed | none, with the same message as in step 6 |
+
+The Java values are unchanged. This run also guards against a regression an
+earlier version of the fix had: `jackson-module-scala` turns untyped values into
+Scala collections when Jackson reads them back, which the wire encoder rejects,
+so every `setXCom` in a Spark bundle failed. The fix now reads the encoded value
+back without the bundle's modules.
+
+## 8. Read the evidence
 
 ```bash
 make evidence
@@ -155,18 +184,14 @@ make evidence
 
 Then open:
 
-- `evidence/EVIDENCE.md` — run ids, Asia/Tbilisi timestamps, per-task state and XCom
-- `evidence/baseline-xcom.json` and `evidence/patched-xcom.json`
-- `evidence/patched-errors.json` — exact exception text
-- `evidence/log-excerpts/` — the `IllegalArgumentException` lines from the four failed tasks
-- `evidence/logs-baseline/` and `evidence/logs-patched/` — written locally when you re-run (not in git)
+- `evidence/EVIDENCE.md`: run ids, timestamps, per-task state, XCom and error for all three runs
+- `evidence/{baseline,patched,patched-scala}-xcom.json` and `evidence/*-errors.json`
+- `evidence/log-excerpts/`: the `IllegalArgumentException` lines from the patched run
+- `evidence/logs-*/` and `evidence/*-airflow.db*`: written locally when you re-run (not in git)
 
-To run steps 1–7 in one go: `make all` (or `./run.sh all`).
+To run steps 1–8 in one go: `make all` (or `./run.sh all`).
 
-## 8. Java SDK unit tests (the fix itself)
-
-From the same `$AIRFLOW_SRC` checkout (the setXCom patch; the Scala docs patch
-may also be applied — the two patches do not conflict):
+## 9. Java SDK unit tests (the fix itself)
 
 ```bash
 cd "$AIRFLOW_SRC/java-sdk"
@@ -175,34 +200,18 @@ cd "$AIRFLOW_SRC/java-sdk"
 
 or, from this directory: `make sdk-check`.
 
-**Expected:** 426 tests, 0 failures, including `JsonValueTest` and the updated
-`CommTest`, plus ktlint and spotless.
-
-## What the DAG does
-
-Eight independent `@task.stub(queue="java")` tasks (no `>>`), so a rejection
-does not skip the controls.
-
-| task | value pushed |
-|---|---|
-| `extract` | boxed long `42` |
-| `score` | `Map("region" -> input.region, "threshold" -> input.threshold).asJava` |
-| `push_as_java` | the same map via `.asJava` |
-| `push_java_pojo` | Java bean `ScoreSummaryBean` with `getRegion` / `getThreshold` |
-| `push_scala_map` | Scala `Map("region" -> "eu", "threshold" -> 0.5)` |
-| `push_scala_seq` | Scala `Seq(1, 2, 3)` |
-| `push_scala_option` | `Some("eu")` |
-| `push_case_class` | `ScoreSummary("eu", 0.5)` |
+With the patch on `943c8ffceb`, this ran 419 tests with 0 failures, plus ktlint
+and spotless (Gradle 8.14.5 on Temurin 17).
 
 ## Layout
 
 ```
 Dockerfile          apache/airflow:3.4.0-python3.12 + Temurin 17 JRE
-dags/               Python stub DAG
-scala-src/          sbt thin-bundle project (handlers + Java TaskInput / POJO)
+dags/               Python stub Dag
+scala-src/          sbt thin-bundle project (handlers, Java TaskInput, bean and empty class)
 scripts/            bundle, overlay, run, and evidence helpers
-Makefile            image, bundle, overlay, baseline, patched, evidence, sdk-check
-patches/            setXCom loud-failure and Scala docs patches (apply on 9eb25f92)
+Makefile            image, bundle, overlay, baseline, patched, patched-scala, evidence, sdk-check
+patches/            setXCom encoding fix and Scala docs patches (apply on 943c8ffceb)
 evidence/           captured results (EVIDENCE.md, JSON, log excerpts)
 ```
 

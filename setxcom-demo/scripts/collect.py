@@ -13,6 +13,8 @@ TBILISI = timezone(timedelta(hours=4))
 
 CONTROL_TASKS = ("extract", "score", "push_as_java", "push_java_pojo")
 SCALA_TASKS = ("push_scala_map", "push_scala_seq", "push_scala_option", "push_case_class")
+EMPTY_TASKS = ("push_empty_object",)
+TASK_ORDER = CONTROL_TASKS + SCALA_TASKS + EMPTY_TASKS
 
 
 def to_tbilisi(ts: str | None) -> str | None:
@@ -138,7 +140,7 @@ def collect(demo_root: Path, mode: str, run_id: str) -> None:
                 "error": errors.get(task_id),
             }
         )
-    rows.sort(key=lambda r: (CONTROL_TASKS + SCALA_TASKS).index(r["task_id"]) if r["task_id"] in CONTROL_TASKS + SCALA_TASKS else 99)
+    rows.sort(key=lambda r: TASK_ORDER.index(r["task_id"]) if r["task_id"] in TASK_ORDER else 99)
 
     payload = {
         "mode": mode,
@@ -164,7 +166,7 @@ def write_evidence_md(demo_root: Path) -> None:
         "These runs were produced by the README steps in this directory (local only; nothing was published).",
         "",
     ]
-    for mode in ("baseline", "patched"):
+    for mode in ("baseline", "patched", "patched-scala"):
         path = evid / f"{mode}-xcom.json"
         if not path.exists():
             continue

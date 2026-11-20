@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 # Start Airflow 3.4.0 standalone, trigger setxcom_fix, collect evidence.
-# Usage: run-airflow.sh baseline|patched
+# Usage: run-airflow.sh baseline|patched|patched-scala
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
-MODE="${1:?usage: run-airflow.sh baseline|patched}"
+MODE="${1:?usage: run-airflow.sh baseline|patched|patched-scala}"
 case "$MODE" in
   baseline) BUNDLE="$DEMO_ROOT/bundle-baseline" ;;
   patched)  BUNDLE="$DEMO_ROOT/bundle-patched" ;;
-  *) echo "mode must be baseline or patched" >&2; exit 1 ;;
+  patched-scala) BUNDLE="$DEMO_ROOT/bundle-patched-scala" ;;
+  *) echo "mode must be baseline, patched or patched-scala" >&2; exit 1 ;;
 esac
 [[ -f "$BUNDLE/airflow-sdk-1.0.0.jar" ]] || { echo "missing $BUNDLE; run make bundle / make overlay" >&2; exit 1; }
 
@@ -28,6 +29,7 @@ chmod 777 "$LOGDIR"
 
 docker run -d --name "$NAME" \
   -e AIRFLOW__CORE__EXECUTOR=LocalExecutor \
+  -e AIRFLOW__CORE__PARALLELISM=3 \
   -e AIRFLOW__CORE__LOAD_EXAMPLES=False \
   -e AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_ALL_ADMINS=True \
   -e AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags \
@@ -56,7 +58,7 @@ if [[ "$ready" -ne 1 ]]; then
   exit 1
 fi
 
-RUN_ID="reviewer_demo_${MODE}_$(TZ=Asia/Tbilisi date +%Y%m%dT%H%M%S)"
+RUN_ID="reviewer_demo_${MODE//-/_}_$(TZ=Asia/Tbilisi date +%Y%m%dT%H%M%S)"
 echo "$RUN_ID" > "$EVID/${MODE}-run-id.txt"
 docker exec "$NAME" airflow dags unpause "$DAG_ID" >/dev/null
 docker exec "$NAME" airflow dags trigger "$DAG_ID" --run-id "$RUN_ID" >/dev/null
@@ -82,7 +84,11 @@ fi
 
 docker exec "$NAME" airflow tasks states-for-dag-run "$DAG_ID" "$RUN_ID" -o json \
   > "$EVID/${MODE}-states.json"
-docker cp "$NAME:/opt/airflow/airflow.db" "$EVID/${MODE}-airflow.db" >/dev/null
+# SQLite runs in WAL mode: recent writes (including XComs) live in -wal until a
+# checkpoint, so copy the sidecar files too or the newest rows go missing.
+for suffix in "" -wal -shm; do
+  docker cp "$NAME:/opt/airflow/airflow.db$suffix" "$EVID/${MODE}-airflow.db$suffix" >/dev/null 2>&1 || true
+done
 python3 "$DEMO_ROOT/scripts/collect.py" --mode "$MODE" --run-id "$RUN_ID" --demo-root "$DEMO_ROOT"
 
 docker stop "$NAME" >/dev/null

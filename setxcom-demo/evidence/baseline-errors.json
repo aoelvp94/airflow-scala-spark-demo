@@ -1,0 +1,3 @@
+{
+  "push_empty_object": "java.lang.IllegalArgumentException: No serializer found for class com.mycompany.airflow.hello.EmptyMarker and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS) (through reference chain: org.apache.airflow.sdk.execution.comm.SetXCom[\"value\"])"
+}

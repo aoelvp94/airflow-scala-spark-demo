@@ -1,16 +1,16 @@
 {
   "mode": "patched",
   "dag_id": "setxcom_fix",
-  "run_id": "reviewer_demo_patched_20261118T201520",
+  "run_id": "reviewer_demo_patched_20261120T221221",
   "dag_state": "failed",
-  "start_date_tbilisi": "2026-11-18 20:15:25 Asia/Tbilisi (UTC+4)",
-  "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+  "start_date_tbilisi": "2026-11-20 22:12:27 Asia/Tbilisi (UTC+4)",
+  "end_date_tbilisi": "2026-11-20 22:13:00 Asia/Tbilisi (UTC+4)",
   "tasks": [
     {
       "task_id": "extract",
       "state": "success",
-      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-20 22:12:29 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:37 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": 42,
       "error": null
@@ -18,8 +18,8 @@
     {
       "task_id": "score",
       "state": "success",
-      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-20 22:12:29 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:37 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "region": "eu",
@@ -30,8 +30,8 @@
     {
       "task_id": "push_as_java",
       "state": "success",
-      "start_date_tbilisi": "2026-11-18 20:15:25 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-20 22:12:29 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:37 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "region": "eu",
@@ -42,8 +42,8 @@
     {
       "task_id": "push_java_pojo",
       "state": "success",
-      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-20 22:12:44 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:45 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "region": "eu",
@@ -53,39 +53,61 @@
     },
     {
       "task_id": "push_scala_map",
-      "state": "failed",
-      "start_date_tbilisi": "2026-11-18 20:15:25 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
-      "xcom_key": null,
-      "xcom_value": null,
-      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.collection.immutable.Map$Map2. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+      "state": "success",
+      "start_date_tbilisi": "2026-11-20 22:12:44 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:45 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "scala$collection$immutable$Map$Map2$$key1": "region",
+        "scala$collection$immutable$Map$Map2$$value1": "eu",
+        "scala$collection$immutable$Map$Map2$$key2": "threshold",
+        "scala$collection$immutable$Map$Map2$$value2": 0.5,
+        "empty": false,
+        "traversableAgain": true
+      },
+      "error": null
     },
     {
       "task_id": "push_scala_seq",
-      "state": "failed",
-      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
-      "xcom_key": null,
-      "xcom_value": null,
-      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.collection.immutable.$colon$colon. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+      "state": "success",
+      "start_date_tbilisi": "2026-11-20 22:12:44 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:45 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "empty": false,
+        "traversableAgain": true
+      },
+      "error": null
     },
     {
       "task_id": "push_scala_option",
-      "state": "failed",
-      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:30 Asia/Tbilisi (UTC+4)",
-      "xcom_key": null,
-      "xcom_value": null,
-      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: scala.Some. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+      "state": "success",
+      "start_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:54 Asia/Tbilisi (UTC+4)",
+      "xcom_key": "return_value",
+      "xcom_value": {
+        "empty": false,
+        "defined": true
+      },
+      "error": null
     },
     {
       "task_id": "push_case_class",
       "state": "failed",
-      "start_date_tbilisi": "2026-11-18 20:15:26 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-18 20:15:29 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
       "xcom_key": null,
       "xcom_value": null,
-      "error": "java.lang.IllegalArgumentException: Unsupported XCom value type: com.mycompany.airflow.hello.ScoreSummary. Scala collections, Option and case classes cannot be stored as XComs directly. Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), and convert a case class or Option to a java.util.Map or list."
+      "error": "java.lang.IllegalArgumentException: Cannot send com.mycompany.airflow.hello.ScoreSummary to Airflow: Jackson finds no properties to encode, so it would be stored as {}. Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type to the bundle (jackson-module-scala for Scala collections, Option and case classes)."
+    },
+    {
+      "task_id": "push_empty_object",
+      "state": "failed",
+      "start_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
+      "xcom_key": null,
+      "xcom_value": null,
+      "error": "java.lang.IllegalArgumentException: Cannot send com.mycompany.airflow.hello.EmptyMarker to Airflow: Jackson finds no properties to encode, so it would be stored as {}. Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type to the bundle (jackson-module-scala for Scala collections, Option and case classes)."
     }
   ]
 }

@@ -11,6 +11,12 @@ lazy val root = (project in file("."))
     javacOptions ++= Seq("--release", "17"),
     scalacOptions ++= Seq("-release", "17"),
     libraryDependencies += "org.apache.airflow" % "airflow-sdk" % airflowSdkVersion,
+    // Same Jackson minor as airflow-sdk 1.0.0 (2.22), so the module registers cleanly.
+    libraryDependencies ++= (
+      if (sys.env.get("WITH_JACKSON_SCALA").contains("1"))
+        Seq("com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.22.2")
+      else Seq.empty
+    ),
     Compile / mainClass := Some(bundleMainClass),
     Compile / packageBin / packageOptions += Package.ManifestAttributes(
       "Main-Class" -> bundleMainClass

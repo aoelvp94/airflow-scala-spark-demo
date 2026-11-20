@@ -1,287 +1,190 @@
-From 479564799b0d4c323288c39f09a01c579f41f37e Mon Sep 17 00:00:00 2001
-From: Aldo <aoelvp94@users.noreply.github.com>
-Date: Wed, 18 Nov 2026 19:21:14 +0400
-Subject: [PATCH] Fail loudly when setXCom is given a Scala type or empty
- object
-
-SetXCom and task-state values go through Frame, which converts the
-message object with Jackson. A Scala collection, Option or case class
-was stored as bean properties or as {}, and the task succeeded.
-
-Inspect the original value first. Reject Scala types (detected by a
-scala. name prefix on the class, superclasses or interfaces, with no
-Scala dependency) and objects Jackson would encode as {}. Java types
-that already encoded usefully still pass through unchanged.
-
-related: #66329
-
-Generated-by: Grok Bot
-Signed-off-by: Aldo <aoelvp94@users.noreply.github.com>
----
- .../language-sdks/java.rst                    |  12 +-
- .../kotlin/org/apache/airflow/sdk/Client.kt   |  20 +-
- .../apache/airflow/sdk/execution/Client.kt    |   4 +-
- .../org/apache/airflow/sdk/execution/Frame.kt |  15 ++
- .../apache/airflow/sdk/execution/JsonValue.kt |  97 ++++++++++
- .../apache/airflow/sdk/execution/CommTest.kt  | 133 ++++++++++++++
- .../airflow/sdk/execution/JsonValueTest.kt    | 171 ++++++++++++++++++
- .../src/test/kotlin/scala/fake/ScalaStubs.kt  |  36 ++++
- 8 files changed, 480 insertions(+), 8 deletions(-)
- create mode 100644 java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/JsonValue.kt
- create mode 100644 java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/JsonValueTest.kt
- create mode 100644 java-sdk/sdk/src/test/kotlin/scala/fake/ScalaStubs.kt
-
 diff --git a/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst b/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst
-index f71e57a4..d66d2a37 100644
+index f71e57a46c..9c9232d846 100644
 --- a/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst
 +++ b/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst
-@@ -709,7 +709,13 @@ The ``Client``
+@@ -709,7 +709,9 @@ The ``Client``
         read another key, Dag or run; see the API reference. For the Java types values arrive as, see
         :ref:`java-sdk/types`.
     * - ``setXCom(value)`` / ``setXCom(key, value)``
 -     - Publishes an XCom value. The value must be JSON-serializable.
-+     - Publishes an XCom value. The value must be JSON-serializable. Scala collections, ``Option``
-+       and case classes raise ``IllegalArgumentException`` rather than being stored as bean
-+       properties; convert them with ``.asJava`` from ``scala.jdk.CollectionConverters``, or pass a
-+       ``Map`` or list. An object with no serializable properties is also rejected, because it would
-+       be stored as ``{}``. Java objects with properties, including records and Kotlin data classes,
-+       are stored as those properties. Byte arrays are rejected; encode them as a string first, for
-+       example with Base64.
++     - Publishes an XCom value. The value must be JSON-serializable. Objects are encoded with Jackson
++       and the Jackson modules in the bundle; an object with no properties to encode raises
++       ``IllegalArgumentException`` instead of being stored as ``{}``.
     * - ``getTaskStateStore()``
       - This task instance's key/value store, with ``get``, ``set``, ``delete`` and ``clear``. See
         :ref:`java-sdk/task-state-store`.
-@@ -954,6 +960,10 @@ XComs are stored as JSON, so a value read with ``getXCom`` arrives as the matchi
+@@ -954,6 +956,12 @@ XComs are stored as JSON, so a value read with ``getXCom`` arrives as the matchi
       - object
       - ``Map<String, Object>``
  
-+``setXCom`` and the task-state store also accept a Java object with serializable properties, which
-+is stored as a JSON object. A Scala collection, ``Option`` or case class, or an object with no
-+serializable properties, fails the call with ``IllegalArgumentException``.
++``setXCom`` and the task-state store encode any other object with Jackson, using every Jackson module
++in the bundle. A Java bean, record or Kotlin data class becomes a JSON object of its properties. Scala
++collections, ``Option`` and case classes need ``jackson-module-scala`` on the classpath (Spark bundles
++already include it); without it, Jackson stores them as their bean properties. An object with no
++properties to encode fails the call with ``IllegalArgumentException``.
 +
  A typed parameter receives the type it declares, so a ``double`` parameter accepts an integer and
  ``List<Double>`` holds ``Double`` elements. Use ``String`` rather than ``char``: a ``char`` parameter fails on a string
  longer than one character.
 diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt
-index 8b331138..ca14088b 100644
+index 8b3311382b..9a2b308dc8 100644
 --- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt
 +++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt
-@@ -181,9 +181,17 @@ class Client internal constructor(
+@@ -181,9 +181,12 @@ class Client internal constructor(
     * @param key XCom key; defaults to [XCOM_RETURN_KEY].
     * @param value Value to push. Must be JSON-serializable. The SDK rejects byte
     *    arrays, so encode binary data as a string first, for example with Base64.
-+   *    Scala collections, `Option` and case classes are rejected rather than
-+   *    stored as bean properties; convert a Scala collection with
-+   *    `scala.jdk.CollectionConverters` (`.asJava`), and a case class to a
-+   *    [Map] or list. An object with no serializable properties is also
-+   *    rejected, because it would be stored as `{}`. Java objects with
-+   *    properties, including records and Kotlin data classes, are stored as
-+   *    those properties.
++   *    Objects are encoded with Jackson and the Jackson modules in the bundle,
++   *    so Scala values need `jackson-module-scala`.
     * @throws ApiError if the API call fails.
     * @throws IllegalArgumentException if [value] is or contains a type that the
 -   *    SDK cannot send, such as a byte array.
-+   *    SDK cannot send, such as a byte array, a Scala collection, or an object
-+   *    with no serializable properties.
++   *    SDK cannot send, such as a byte array or an object with no properties to
++   *    encode.
     */
    @JvmOverloads fun setXCom(
      key: String = XCOM_RETURN_KEY,
-@@ -236,7 +244,7 @@ class Client internal constructor(
-  * Key-value state scoped to one task instance, shared across its retries
-  * within the same Dag run.
-  *
-- * Values must be JSON-serializable. Every key has an expiry: by default the
-+ * Values must be JSON-serializable, as [setXCom][Client.setXCom] accepts. Every key has an expiry: by default the
-  * deployment's `[state_store] default_retention_days`, which the coordinator
-  * passes to the JVM as `AIRFLOW__STATE_STORE__DEFAULT_RETENTION_DAYS`; [set]
-  * also takes an explicit retention, or [NEVER_EXPIRE] for a key that garbage
-@@ -272,11 +280,13 @@ class TaskStateStore internal constructor(
+@@ -272,11 +275,12 @@ class TaskStateStore internal constructor(
     * Stores [value] under [key], replacing any existing value.
     *
     * @param key State key.
 -   * @param value Value to store. Must be JSON-serializable.
-+   * @param value Value to store. Must be JSON-serializable, as
-+   *   [setXCom][Client.setXCom] accepts.
++   * @param value Value to store, encoded as for [setXCom][Client.setXCom].
     * @param retention How long to keep the key. Must be positive, or
     *   [NEVER_EXPIRE]; `null` uses `[state_store] default_retention_days`.
 -   * @throws IllegalArgumentException if [retention] is zero or negative, or the
 -   *   default retention from the environment is not a non-negative integer.
-+   * @throws IllegalArgumentException if [value] is or contains a type that the
-+   *   SDK cannot send, if [retention] is zero or negative, or if the default
-+   *   retention from the environment is not a non-negative integer.
++   * @throws IllegalArgumentException if [value] cannot be sent, if [retention] is
++   *   zero or negative, or if the default retention from the environment is not a
++   *   non-negative integer.
     * @throws IllegalStateException if [retention] is `null` and the coordinator
     *   did not pass `[state_store] default_retention_days` to the JVM.
     * @throws ApiError if the API call fails.
-diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Client.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Client.kt
-index 7bcef266..65a7d347 100644
---- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Client.kt
-+++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Client.kt
-@@ -200,7 +200,7 @@ class CoordinatorClient(
-     val message =
-       SetXCom().also {
-         it.key = key
--        it.value = value
-+        it.value = jsonValue(value)
-         it.dagId = dagId
-         it.taskId = taskId
-         it.runId = runId
-@@ -253,7 +253,7 @@ class CoordinatorClient(
-       SetTaskStateStore().also {
-         it.tiId = tiId
-         it.key = key
--        it.value = value
-+        it.value = jsonValue(value)
-         it.expiresAt = expiresAt
-       }
-     runBlocking { exec.communicate<OKResponse>(message) }
 diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt
-index 9cd43269..99139e31 100644
+index 9cd432692e..c4af4139ed 100644
 --- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt
 +++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt
-@@ -21,6 +21,7 @@ package org.apache.airflow.sdk.execution
+@@ -20,14 +20,26 @@
+ package org.apache.airflow.sdk.execution
  
  import com.fasterxml.jackson.annotation.JsonInclude
++import com.fasterxml.jackson.core.JsonGenerator
++import com.fasterxml.jackson.databind.BeanDescription
  import com.fasterxml.jackson.databind.DeserializationFeature
 +import com.fasterxml.jackson.databind.JsonNode
++import com.fasterxml.jackson.databind.JsonSerializer
  import com.fasterxml.jackson.databind.ObjectMapper
++import com.fasterxml.jackson.databind.SerializationConfig
  import com.fasterxml.jackson.databind.SerializationFeature
++import com.fasterxml.jackson.databind.SerializerProvider
++import com.fasterxml.jackson.databind.module.SimpleModule
++import com.fasterxml.jackson.databind.ser.BeanSerializerModifier
++import com.fasterxml.jackson.databind.ser.impl.UnknownSerializer
++import com.fasterxml.jackson.databind.ser.std.BeanSerializerBase
++import com.fasterxml.jackson.databind.ser.std.StdSerializer
  import com.fasterxml.jackson.databind.util.StdDateFormat
-@@ -64,6 +65,20 @@ object Frame {
+ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+ import org.apache.airflow.sdk.execution.comm.Discriminator
+ import org.apache.airflow.sdk.execution.comm.PutVariable
+ import org.apache.airflow.sdk.execution.comm.SetTaskStateStore
++import org.apache.airflow.sdk.execution.comm.SetXCom
+ import org.msgpack.core.MessagePack
+ import org.msgpack.core.MessageUnpacker
+ import org.msgpack.core.buffer.ArrayBufferInput
+@@ -64,6 +76,34 @@ object Frame {
        REQUIRED_NULLABLE_REQUESTS.forEach { addMixIn(it, KeepNullFields::class.java) }
      }
  
 +  /**
-+   * Whether Jackson would encode [value] as an empty JSON object (`{}`) with
-+   * the same mapper [toBody] uses for request fields.
++   * Encodes values that task code hands to Airflow, using every Jackson module
++   * on the classpath and rejecting objects that have no properties to encode.
 +   */
-+  internal fun encodesAsEmptyObject(value: Any): Boolean =
-+    try {
-+      val node = mapper.valueToTree<JsonNode>(value)
-+      node.isObject && node.size() == 0
-+    } catch (_: Exception) {
-+      // If Jackson cannot encode [value], leave it alone so [toBody] fails the
-+      // same way it did before, instead of turning that into a new error.
-+      false
++  private val userValueMapper: ObjectMapper by lazy {
++    mapper.copy().apply {
++      registerModule(SimpleModule().setSerializerModifier(RejectEmptyBeans))
++      findAndRegisterModules()
 +    }
++  }
++
++  /**
++   * Converts a user value into JSON-shaped data (maps, lists, strings, numbers,
++   * booleans, null) before it goes on the wire.
++   *
++   * @throws IllegalArgumentException if [value] is or contains an object with no
++   *   properties to encode, or a byte array.
++   */
++  internal fun encodeUserValue(value: Any?): Any? = encodeUserValue(value, userValueMapper)
++
++  // The tree is read back with [mapper], which has no discovered modules:
++  // jackson-module-scala replaces untyped deserialization with Scala
++  // collections, which [packAny] cannot send.
++  internal fun encodeUserValue(
++    value: Any?,
++    valueMapper: ObjectMapper,
++  ): Any? = value?.let { mapper.treeToValue(valueMapper.valueToTree<JsonNode>(it), Any::class.java) }
 +
    fun encodeRequest(
      id: Int,
      body: Any,
-diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/JsonValue.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/JsonValue.kt
-new file mode 100644
-index 00000000..c0940197
---- /dev/null
-+++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/JsonValue.kt
-@@ -0,0 +1,97 @@
-+/*
-+ * Licensed to the Apache Software Foundation (ASF) under one
-+ * or more contributor license agreements.  See the NOTICE file
-+ * distributed with this work for additional information
-+ * regarding copyright ownership.  The ASF licenses this file
-+ * to you under the Apache License, Version 2.0 (the
-+ * "License"); you may not use this file except in compliance
-+ * with the License.  You may obtain a copy of the License at
-+ *
-+ *   http://www.apache.org/licenses/LICENSE-2.0
-+ *
-+ * Unless required by applicable law or agreed to in writing,
-+ * software distributed under the License is distributed on an
-+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-+ * KIND, either express or implied.  See the License for the
-+ * specific language governing permissions and limitations
-+ * under the License.
-+ */
-+
-+package org.apache.airflow.sdk.execution
-+
-+/**
-+ * Checks that [value] can be stored as an XCom or task-state value, and returns
-+ * it unchanged so later encoding matches the previous Jackson behaviour.
-+ *
-+ * [Frame] encodes a request by converting the message object to a map with
-+ * Jackson. A Scala collection, `Option` or case class (none of which are
-+ * `java.util.Map` / `java.util.Collection`) was stored as that object's bean
-+ * properties, or as `{}` when it had none, and the task succeeded. This
-+ * inspects the original value first, and rejects those Scala types and any
-+ * other object Jackson would encode as `{}`. Java types that already encoded
-+ * usefully (POJOs and Kotlin data classes with properties, records, enums,
-+ * `java.time`, `Date`, `Optional`, and so on) still pass through.
-+ *
-+ * Nested values in a `Map`, `Collection` or array are checked the same way.
-+ */
-+internal fun jsonValue(value: Any?): Any? {
-+  rejectUnsupportedXComValue(value)
-+  return value
-+}
-+
-+private fun rejectUnsupportedXComValue(value: Any?) {
-+  when (value) {
-+    null, is String, is Boolean, is Number -> return
-+    is ByteArray ->
-+      throw IllegalArgumentException(
-+        "Airflow does not accept byte arrays because they are not JSON values. " +
-+          "Encode the bytes as a string first, for example with java.util.Base64.",
-+      )
-+    is Map<*, *> -> value.values.forEach(::rejectUnsupportedXComValue)
-+    is Collection<*> -> value.forEach(::rejectUnsupportedXComValue)
-+    is Array<*> -> value.forEach(::rejectUnsupportedXComValue)
-+    is IntArray, is LongArray, is ShortArray, is DoubleArray, is FloatArray, is BooleanArray, is CharArray ->
-+      return
-+    else -> {
-+      if (isScalaType(value.javaClass)) {
-+        throw IllegalArgumentException(unsupportedScalaXComMessage(value))
+@@ -134,11 +174,49 @@ object Frame {
+   }
+ 
+   @Suppress("UNCHECKED_CAST")
+-  private fun toBody(value: Any): Map<String, Any?> =
+-    when (value) {
+-      is Map<*, *> -> value as Map<String, Any?>
+-      else -> mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>
++  private fun toBody(value: Any): Map<String, Any?> {
++    if (value is Map<*, *>) return value as Map<String, Any?>
++    val userValue =
++      when (value) {
++        is SetXCom -> value.value
++        is SetTaskStateStore -> value.value
++        else -> return mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>
 +      }
-+      if (Frame.encodesAsEmptyObject(value)) {
-+        throw IllegalArgumentException(emptyObjectXComMessage(value))
-+      }
-+    }
++    val encoded = encodeUserValue(userValue)
++    return (mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>).also {
++      if (encoded != null || "value" in it) it["value"] = encoded
+     }
 +  }
 +}
 +
-+/**
-+ * True when [type] is a Scala type, or implements or extends one, detected by
-+ * a `scala.` name prefix so the SDK does not depend on the Scala library.
-+ * That covers `scala.collection.*`, `scala.Option` / `Some` / `None`,
-+ * `scala.Product` (case classes) and `scala.Tuple*`.
-+ */
-+internal fun isScalaType(type: Class<*>): Boolean {
-+  val seen = HashSet<Class<*>>()
-+  val queue = ArrayDeque<Class<*>>()
-+  queue.add(type)
-+  while (queue.isNotEmpty()) {
-+    val current = queue.removeFirst()
-+    if (!seen.add(current)) continue
-+    if (current.name.startsWith("scala.")) return true
-+    current.superclass?.let { queue.add(it) }
-+    queue.addAll(current.interfaces)
++private object RejectEmptyBeans : BeanSerializerModifier() {
++  override fun modifySerializer(
++    config: SerializationConfig,
++    beanDesc: BeanDescription,
++    serializer: JsonSerializer<*>,
++  ): JsonSerializer<*> {
++    val empty =
++      serializer is UnknownSerializer ||
++        (serializer is BeanSerializerBase && !serializer.properties().hasNext() && beanDesc.findAnyGetter() == null)
++    return if (empty) EmptyBeanSerializer(beanDesc.beanClass) else serializer
 +  }
-+  return false
 +}
 +
-+private fun unsupportedScalaXComMessage(value: Any): String =
-+  "Unsupported XCom value type: ${value.javaClass.name}. " +
-+    "Scala collections, Option and case classes cannot be stored as XComs directly. " +
-+    "Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), " +
-+    "and convert a case class or Option to a java.util.Map or list."
-+
-+private fun emptyObjectXComMessage(value: Any): String =
-+  "Unsupported XCom value type: ${value.javaClass.name}. " +
-+    "This value has no serializable properties and would be stored as {}. " +
-+    "Pass a java.util.Map, list, or JSON scalar. " +
-+    "Convert a Scala collection with scala.jdk.CollectionConverters (.asJava), " +
-+    "and convert a case class to a java.util.Map or list."
++private class EmptyBeanSerializer(
++  private val type: Class<*>,
++) : StdSerializer<Any>(Any::class.java) {
++  override fun serialize(
++    value: Any,
++    gen: JsonGenerator,
++    provider: SerializerProvider,
++  ) {
++    provider.reportBadDefinition<Unit>(
++      type,
++      "Cannot send ${type.name} to Airflow: Jackson finds no properties to encode, so it would be stored as {}. " +
++        "Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type " +
++        "to the bundle (jackson-module-scala for Scala collections, Option and case classes).",
++    )
++  }
+ }
+ 
+ private fun Discriminator.discriminate(body: Map<*, *>): Class<*>? {
 diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt
-index 7aa55adb..213b8f8c 100644
+index 7aa55adb7d..32c333fab4 100644
 --- a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt
 +++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt
-@@ -40,6 +40,8 @@ import org.junit.jupiter.api.Test
- import org.junit.jupiter.api.Timeout
- import org.msgpack.core.MessagePack
- import org.msgpack.core.buffer.ArrayBufferInput
-+import scala.fake.CaseClassLike
-+import scala.fake.SeqLike
- import java.io.ByteArrayOutputStream
- import java.time.Duration
- import java.time.OffsetDateTime
-@@ -816,6 +818,137 @@ class CommsTest {
+@@ -816,6 +816,149 @@ class CommsTest {
      comm.close()
    }
  
@@ -295,14 +198,26 @@ index 7aa55adb..213b8f8c 100644
 +  }
 +
 +  @Test
-+  @DisplayName("setXCom rejects a Scala type without writing anything to the supervisor")
++  @DisplayName("setXCom rejects an object with no properties nested in a map or list")
 +  @Timeout(value = 30, unit = TimeUnit.SECONDS)
-+  fun setXComRejectsScalaTypeBeforeWriting() {
-+    val seq = assertSetXComRejectedWithoutWriting(SeqLike())
-+    Assertions.assertTrue(SeqLike::class.java.name in seq.message.orEmpty(), seq.message)
-+    Assertions.assertTrue("CollectionConverters" in seq.message.orEmpty(), seq.message)
-+    val caseClass = assertSetXComRejectedWithoutWriting(CaseClassLike("eu", 0.5))
-+    Assertions.assertTrue(CaseClassLike::class.java.name in caseClass.message.orEmpty(), caseClass.message)
++  fun setXComRejectsNestedEmptyBeanBeforeWriting() {
++    val inMap = assertSetXComRejectedWithoutWriting(mapOf("score" to NoProperties()))
++    Assertions.assertTrue(NoProperties::class.java.name in inMap.message.orEmpty(), inMap.message)
++    Assertions.assertTrue("[\"score\"]" in inMap.message.orEmpty(), "the error should name the path: ${inMap.message}")
++    val inList = assertSetXComRejectedWithoutWriting(listOf(1L, NoProperties()))
++    Assertions.assertTrue(NoProperties::class.java.name in inList.message.orEmpty(), inList.message)
++  }
++
++  @Test
++  @DisplayName("setXCom encodes a type with the Jackson module registered for it on the classpath")
++  @Timeout(value = 30, unit = TimeUnit.SECONDS)
++  fun setXComUsesJacksonModulesOnTheClasspath() {
++    val (body, failure) =
++      roundTrip(::emptyResponseFrame, setXComDetails()) {
++        it.setXCom(value = mapOf("custom" to listOf(ModuleEncoded())))
++      }
++    Assertions.assertNull(failure, "setXCom should return normally, got $failure")
++    Assertions.assertEquals(mapOf("custom" to listOf("encoded by TestValueModule")), body["value"])
 +  }
 +
 +  @Test
@@ -353,9 +268,9 @@ index 7aa55adb..213b8f8c 100644
 +  }
 +
 +  @Test
-+  @DisplayName("taskStateStore.set rejects a Scala type without writing anything to the supervisor")
++  @DisplayName("taskStateStore.set rejects an object with no properties without writing anything to the supervisor")
 +  @Timeout(value = 30, unit = TimeUnit.SECONDS)
-+  fun taskStateStoreSetRejectsScalaTypeBeforeWriting() {
++  fun taskStateStoreSetRejectsEmptyBeanBeforeWriting() {
 +    val toClient = ByteChannel(autoFlush = true)
 +    val fromClient = ByteChannel(autoFlush = true)
 +    val comm = CoordinatorComm(toClient, fromClient)
@@ -364,10 +279,10 @@ index 7aa55adb..213b8f8c 100644
 +
 +    val error =
 +      Assertions.assertThrows(IllegalArgumentException::class.java) {
-+        client.taskStateStore.set("job_id", SeqLike(), TaskStateStore.NEVER_EXPIRE)
++        client.taskStateStore.set("job_id", NoProperties(), TaskStateStore.NEVER_EXPIRE)
 +      }
 +
-+    Assertions.assertTrue(SeqLike::class.java.name in error.message.orEmpty(), error.message)
++    Assertions.assertTrue(NoProperties::class.java.name in error.message.orEmpty(), error.message)
 +    runBlocking { fromClient.flushAndClose() }
 +    Assertions.assertTrue(runBlocking { fromClient.exhausted() }, "nothing should be written to the supervisor")
 +    comm.close()
@@ -419,12 +334,12 @@ index 7aa55adb..213b8f8c 100644
    @Test
    @DisplayName("Should fail a pending call when the coordinator socket closes")
    @Timeout(value = 30, unit = TimeUnit.SECONDS)
-diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/JsonValueTest.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/JsonValueTest.kt
+diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/FrameTest.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/FrameTest.kt
 new file mode 100644
-index 00000000..c099056a
+index 0000000000..f48e30d066
 --- /dev/null
-+++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/JsonValueTest.kt
-@@ -0,0 +1,171 @@
++++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/FrameTest.kt
+@@ -0,0 +1,58 @@
 +/*
 + * Licensed to the Apache Software Foundation (ASF) under one
 + * or more contributor license agreements.  See the NOTICE file
@@ -446,162 +361,49 @@ index 00000000..c099056a
 +
 +package org.apache.airflow.sdk.execution
 +
-+import org.junit.jupiter.api.Assertions
++import com.fasterxml.jackson.core.JsonParser
++import com.fasterxml.jackson.databind.DeserializationContext
++import com.fasterxml.jackson.databind.JsonNode
++import com.fasterxml.jackson.databind.ObjectMapper
++import com.fasterxml.jackson.databind.deser.std.StdDeserializer
++import com.fasterxml.jackson.databind.module.SimpleModule
++import org.junit.jupiter.api.Assertions.assertEquals
 +import org.junit.jupiter.api.DisplayName
 +import org.junit.jupiter.api.Test
-+import scala.fake.CaseClassLike
-+import scala.fake.OptionLike
-+import scala.fake.SeqLike
-+import java.math.BigDecimal
-+import java.math.BigInteger
-+import java.time.OffsetDateTime
-+import java.time.ZoneOffset
-+import java.util.Date
-+import java.util.Optional
 +
-+class JsonValueTest {
-+  @Test
-+  @DisplayName("jsonValue returns JSON scalars, maps, lists and arrays unchanged")
-+  fun acceptsJsonTypes() {
-+    val map = mapOf("region" to "eu", "threshold" to 0.5)
-+    val list = listOf(1, "x", null)
-+    Assertions.assertNull(jsonValue(null))
-+    Assertions.assertEquals("ok", jsonValue("ok"))
-+    Assertions.assertEquals(true, jsonValue(true))
-+    Assertions.assertEquals(42, jsonValue(42))
-+    Assertions.assertEquals(42L, jsonValue(42L))
-+    Assertions.assertEquals(1.5, jsonValue(1.5))
-+    Assertions.assertEquals(BigInteger.TEN, jsonValue(BigInteger.TEN))
-+    Assertions.assertSame(map, jsonValue(map))
-+    Assertions.assertSame(list, jsonValue(list))
-+    Assertions.assertSame(emptyMap<String, Any?>(), jsonValue(emptyMap<String, Any?>()))
-+    val array = arrayOf("a", "b")
-+    Assertions.assertSame(array, jsonValue(array))
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue returns Java types that already encoded usefully, unchanged")
-+  fun acceptsJavaTypesThatJacksonEncodes() {
-+    val score = Score("eu", 0.5)
-+    val at = OffsetDateTime.of(2024, 12, 1, 1, 0, 0, 0, ZoneOffset.UTC)
-+    Assertions.assertSame(score, jsonValue(score))
-+    Assertions.assertSame(Region.EU, jsonValue(Region.EU))
-+    Assertions.assertSame(at, jsonValue(at))
-+    val date = Date(0)
-+    Assertions.assertSame(date, jsonValue(date))
-+    Assertions.assertEquals(BigDecimal("1.10"), jsonValue(BigDecimal("1.10")))
-+    Assertions.assertFalse(Frame.encodesAsEmptyObject(score))
-+    Assertions.assertFalse(Frame.encodesAsEmptyObject(Region.EU))
-+    Assertions.assertFalse(Frame.encodesAsEmptyObject(at))
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue does not reject Optional; encoding is left to Jackson")
-+  fun doesNotRejectOptional() {
-+    // Current Jackson needs jackson-datatype-jdk8 to encode Optional. The
-+    // previous convertValue path failed with that error; this check must not
-+    // replace it with a different one, or treat Optional as `{}`.
-+    val present = Optional.of("x")
-+    val empty = Optional.empty<String>()
-+    Assertions.assertSame(present, jsonValue(present))
-+    Assertions.assertSame(empty, jsonValue(empty))
-+    Assertions.assertFalse(Frame.encodesAsEmptyObject(present))
-+    Assertions.assertFalse(Frame.encodesAsEmptyObject(empty))
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue rejects a byte array with the existing Base64 hint")
-+  fun rejectsByteArray() {
-+    val error = Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(byteArrayOf(1, 2)) }
-+    Assertions.assertTrue("Base64" in error.message.orEmpty(), error.message)
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue rejects a nested byte array")
-+  fun rejectsNestedByteArray() {
-+    val error =
-+      Assertions.assertThrows(IllegalArgumentException::class.java) {
-+        jsonValue(mapOf("blob" to byteArrayOf(1)))
-+      }
-+    Assertions.assertTrue("Base64" in error.message.orEmpty(), error.message)
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue rejects an object with no properties instead of encoding it as {}")
-+  fun rejectsObjectWithNoProperties() {
-+    val error = Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(NoProperties()) }
-+    assertRejected(error, NoProperties::class.java, "would be stored as {}")
-+    Assertions.assertTrue(Frame.encodesAsEmptyObject(NoProperties()))
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue rejects a nested object with no properties")
-+  fun rejectsNestedEmptyBean() {
-+    val error = Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(listOf(NoProperties())) }
-+    assertRejected(error, NoProperties::class.java, "would be stored as {}")
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue rejects stand-in Scala collections, Option and case classes")
-+  fun rejectsScalaTypes() {
-+    val seq = Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(SeqLike()) }
-+    val option = Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(OptionLike()) }
-+    val caseClass =
-+      Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(CaseClassLike("eu", 0.5)) }
-+    val viaInterface =
-+      Assertions.assertThrows(IllegalArgumentException::class.java) { jsonValue(LooksLikeCaseClass("eu")) }
-+    assertRejected(seq, SeqLike::class.java, "CollectionConverters")
-+    assertRejected(option, OptionLike::class.java, "CollectionConverters")
-+    assertRejected(caseClass, CaseClassLike::class.java, "case class")
-+    assertRejected(viaInterface, LooksLikeCaseClass::class.java, "CollectionConverters")
-+    Assertions.assertTrue(isScalaType(SeqLike::class.java))
-+    Assertions.assertTrue(isScalaType(LooksLikeCaseClass::class.java))
-+    Assertions.assertFalse(isScalaType(Score::class.java))
-+  }
-+
-+  @Test
-+  @DisplayName("jsonValue rejects a nested Scala type")
-+  fun rejectsNestedScalaType() {
-+    val error =
-+      Assertions.assertThrows(IllegalArgumentException::class.java) {
-+        jsonValue(mapOf("rows" to SeqLike()))
-+      }
-+    assertRejected(error, SeqLike::class.java, "CollectionConverters")
-+  }
-+
-+  private fun assertRejected(
-+    error: IllegalArgumentException,
-+    type: Class<*>,
-+    expectedSnippet: String,
-+  ) {
-+    val message = error.message.orEmpty()
-+    Assertions.assertTrue(type.name in message, message)
-+    Assertions.assertTrue(expectedSnippet in message, message)
-+  }
-+
-+  /** A class with no JavaBean properties; Jackson would store `{}`. */
-+  private class NoProperties
-+
-+  /** A class Jackson stores as its bean properties. */
-+  @Suppress("unused")
-+  private class Score(
-+    val region: String,
-+    val threshold: Double,
++class FrameTest {
++  /** Stands in for the Scala collections jackson-module-scala builds for untyped values. */
++  private class ForeignCollection(
++    val json: String,
 +  )
 +
-+  private enum class Region { EU }
++  @Test
++  @DisplayName("encodeUserValue returns java.util collections when a module replaces untyped deserialization")
++  fun encodeUserValueIgnoresModuleDeserializers() {
++    val valueMapper =
++      ObjectMapper().registerModule(
++        SimpleModule().addDeserializer(
++          Any::class.java,
++          object : StdDeserializer<Any>(Any::class.java) {
++            override fun deserialize(
++              p: JsonParser,
++              ctxt: DeserializationContext,
++            ): Any = ForeignCollection(p.readValueAsTree<JsonNode>().toString())
++          },
++        ),
++      )
 +
-+  /** A user type whose interface is under `scala.`, like a case class implementing Product. */
-+  private class LooksLikeCaseClass(
-+    val region: String,
-+  ) : scala.fake.Product
++    val encoded = Frame.encodeUserValue(mapOf("xs" to listOf("a", "b")), valueMapper)
++
++    assertEquals(mapOf("xs" to listOf("a", "b")), encoded)
++  }
 +}
-diff --git a/java-sdk/sdk/src/test/kotlin/scala/fake/ScalaStubs.kt b/java-sdk/sdk/src/test/kotlin/scala/fake/ScalaStubs.kt
+diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/TestValueModule.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/TestValueModule.kt
 new file mode 100644
-index 00000000..3c147019
+index 0000000000..73948fe887
 --- /dev/null
-+++ b/java-sdk/sdk/src/test/kotlin/scala/fake/ScalaStubs.kt
-@@ -0,0 +1,36 @@
++++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/TestValueModule.kt
+@@ -0,0 +1,47 @@
 +/*
 + * Licensed to the Apache Software Foundation (ASF) under one
 + * or more contributor license agreements.  See the NOTICE file
@@ -621,23 +423,55 @@ index 00000000..3c147019
 + * under the License.
 + */
 +
-+package scala.fake
++package org.apache.airflow.sdk.execution
++
++import com.fasterxml.jackson.core.JsonGenerator
++import com.fasterxml.jackson.databind.SerializerProvider
++import com.fasterxml.jackson.databind.module.SimpleModule
++import com.fasterxml.jackson.databind.ser.std.StdSerializer
++
++/** A type with no properties, so it can only be encoded through [TestValueModule]. */
++class ModuleEncoded
 +
 +/**
-+ * Stand-ins for Scala types, so [org.apache.airflow.sdk.execution.isScalaType]
-+ * can be tested without a Scala library dependency. A `scala.` package prefix
-+ * is what the production check looks for on a class, superclass or interface.
++ * Registered through `META-INF/services/com.fasterxml.jackson.databind.Module`,
++ * the way a bundle picks up a module such as `jackson-module-scala`.
 + */
-+class SeqLike
-+
-+class OptionLike
-+
-+interface Product
-+
-+class CaseClassLike(
-+  val region: String,
-+  val threshold: Double,
-+) : Product
--- 
-2.47.3
-
++class TestValueModule : SimpleModule("TestValueModule") {
++  init {
++    addSerializer(
++      ModuleEncoded::class.java,
++      object : StdSerializer<ModuleEncoded>(ModuleEncoded::class.java) {
++        override fun serialize(
++          value: ModuleEncoded,
++          gen: JsonGenerator,
++          provider: SerializerProvider,
++        ) = gen.writeString("encoded by TestValueModule")
++      },
++    )
++  }
++}
+diff --git a/java-sdk/sdk/src/test/resources/META-INF/services/com.fasterxml.jackson.databind.Module b/java-sdk/sdk/src/test/resources/META-INF/services/com.fasterxml.jackson.databind.Module
+new file mode 100644
+index 0000000000..346188a0ee
+--- /dev/null
++++ b/java-sdk/sdk/src/test/resources/META-INF/services/com.fasterxml.jackson.databind.Module
+@@ -0,0 +1,18 @@
++#
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++org.apache.airflow.sdk.execution.TestValueModule
