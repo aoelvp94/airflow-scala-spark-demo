@@ -8,7 +8,8 @@
 #
 # Requires: Docker (uses the same sbt/Temurin 17 image as the bundle), plus
 # AIRFLOW_SRC pointing at an apache/airflow checkout with the fix applied.
-# The fix lives entirely in Frame.kt, whose callers in 1.0.0 are unchanged.
+# The fix lives in execution/Frame.kt and internal/JacksonModules.kt; their
+# callers in 1.0.0 are unchanged.
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
@@ -17,7 +18,9 @@ AIRFLOW_SRC="$(detect_airflow_src)" || {
   exit 1
 }
 FIX_KT="$AIRFLOW_SRC/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution"
+INTERNAL_KT="$AIRFLOW_SRC/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal"
 [[ -f "$FIX_KT/Frame.kt" ]] || { echo "missing $FIX_KT/Frame.kt" >&2; exit 1; }
+[[ -f "$INTERNAL_KT/JacksonModules.kt" ]] || { echo "missing $INTERNAL_KT/JacksonModules.kt" >&2; exit 1; }
 grep -q 'RejectEmptyBeans' "$FIX_KT/Frame.kt" || {
   echo "$FIX_KT/Frame.kt does not contain the setXCom encoding fix" >&2
   exit 1
@@ -33,6 +36,7 @@ CACHE="$DEMO_ROOT/.cache/maven"
 mkdir -p "$WORK/src" "$WORK/classes" "$CACHE"
 
 cp "$FIX_KT/Frame.kt" "$WORK/src/Frame.kt"
+cp "$INTERNAL_KT/JacksonModules.kt" "$WORK/src/JacksonModules.kt"
 
 # Compile inside the sbt image so reviewers only need Docker + the official jars
 # already copied into the thin bundle (jackson, kotlin-stdlib, coroutines, …).
@@ -103,7 +107,8 @@ docker run --rm --network=host -u "$(id -u):$(id -g)" \
       -Xfriend-paths=/demo/build/overlay/cp/airflow-sdk-1.0.0.jar \
       -cp \"\$CP\" \
       -d /demo/build/overlay/classes \
-      /demo/build/overlay/src/Frame.kt
+      /demo/build/overlay/src/Frame.kt \
+      /demo/build/overlay/src/JacksonModules.kt
   "
 
 # Overlay only org/ classes; keep the official 1.0.0 manifest (schema 2026-10-30)
@@ -121,6 +126,7 @@ with zipfile.ZipFile(jar) as z:
     names = z.namelist()
 assert "Airflow-Supervisor-Schema-Version: 2026-10-30" in manifest, manifest
 assert "org/apache/airflow/sdk/execution/RejectEmptyBeans.class" in names, "overlay is missing RejectEmptyBeans"
+assert "org/apache/airflow/sdk/internal/JacksonModulesKt.class" in names, "overlay is missing JacksonModulesKt"
 print("Wrote $OUT_JAR")
 print("Manifest still has Airflow-Supervisor-Schema-Version: 2026-10-30")
 PY

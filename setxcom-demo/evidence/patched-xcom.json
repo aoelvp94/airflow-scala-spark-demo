@@ -1,16 +1,16 @@
 {
   "mode": "patched",
   "dag_id": "setxcom_fix",
-  "run_id": "reviewer_demo_patched_20261120T221221",
+  "run_id": "reviewer_demo_patched_20261127T190642",
   "dag_state": "failed",
-  "start_date_tbilisi": "2026-11-20 22:12:27 Asia/Tbilisi (UTC+4)",
-  "end_date_tbilisi": "2026-11-20 22:13:00 Asia/Tbilisi (UTC+4)",
+  "start_date_tbilisi": "2026-11-27 19:06:47 Asia/Tbilisi (UTC+4)",
+  "end_date_tbilisi": "2026-11-27 19:07:39 Asia/Tbilisi (UTC+4)",
   "tasks": [
     {
       "task_id": "extract",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:29 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:37 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:06:49 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:14 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": 42,
       "error": null
@@ -18,8 +18,8 @@
     {
       "task_id": "score",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:29 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:37 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:06:50 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:13 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "region": "eu",
@@ -30,8 +30,8 @@
     {
       "task_id": "push_as_java",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:29 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:37 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:06:49 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:14 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "region": "eu",
@@ -42,8 +42,8 @@
     {
       "task_id": "push_java_pojo",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:44 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:45 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:07:20 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:21 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "region": "eu",
@@ -54,8 +54,8 @@
     {
       "task_id": "push_scala_map",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:44 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:45 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:07:20 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:21 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "scala$collection$immutable$Map$Map2$$key1": "region",
@@ -70,8 +70,8 @@
     {
       "task_id": "push_scala_seq",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:44 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:45 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:07:20 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:21 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "empty": false,
@@ -82,8 +82,8 @@
     {
       "task_id": "push_scala_option",
       "state": "success",
-      "start_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:54 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:07:30 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:32 Asia/Tbilisi (UTC+4)",
       "xcom_key": "return_value",
       "xcom_value": {
         "empty": false,
@@ -94,8 +94,8 @@
     {
       "task_id": "push_case_class",
       "state": "failed",
-      "start_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:07:30 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:32 Asia/Tbilisi (UTC+4)",
       "xcom_key": null,
       "xcom_value": null,
       "error": "java.lang.IllegalArgumentException: Cannot send com.mycompany.airflow.hello.ScoreSummary to Airflow: Jackson finds no properties to encode, so it would be stored as {}. Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type to the bundle (jackson-module-scala for Scala collections, Option and case classes)."
@@ -103,8 +103,8 @@
     {
       "task_id": "push_empty_object",
       "state": "failed",
-      "start_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
-      "end_date_tbilisi": "2026-11-20 22:12:53 Asia/Tbilisi (UTC+4)",
+      "start_date_tbilisi": "2026-11-27 19:07:30 Asia/Tbilisi (UTC+4)",
+      "end_date_tbilisi": "2026-11-27 19:07:32 Asia/Tbilisi (UTC+4)",
       "xcom_key": null,
       "xcom_value": null,
       "error": "java.lang.IllegalArgumentException: Cannot send com.mycompany.airflow.hello.EmptyMarker to Airflow: Jackson finds no properties to encode, so it would be stored as {}. Convert it to a java.util.Map, a java.util.List or a JSON scalar, or add a Jackson module for the type to the bundle (jackson-module-scala for Scala collections, Option and case classes)."

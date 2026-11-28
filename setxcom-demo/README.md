@@ -11,7 +11,7 @@ change to how `setXCom` (and the task-state store) encode a value:
 - Java values (maps from `.asJava`, beans, boxed numbers) are stored as before.
 
 Run every command below from this directory. The proposed patches are in
-`patches/` and apply on Apache Airflow `main` at `943c8ffceb`; see
+`patches/` and apply on Apache Airflow `main` at `9c93fe8bbf`; see
 `patches/README.md`. The fix is under review in
 [apache/airflow#77249](https://github.com/apache/airflow/pull/77249).
 
@@ -21,8 +21,11 @@ Airflow 3.4.0's Java coordinator only knows supervisor schemas `2026-06-16`
 and `2026-10-30`. A current `main` build of the SDK is `1.1.0-SNAPSHOT` and
 advertises schema `2027-02-28`, which 3.4.0 rejects. Official `airflow-sdk`
 1.0.0 already carries `2026-10-30`, so this demo compiles the fixed
-`execution/Frame.kt` against that released jar and leaves the manifest alone.
-The fix lives entirely in `Frame.kt`, and its 1.0.0 callers are unchanged.
+`execution/Frame.kt` and the new `internal/JacksonModules.kt` against that
+released jar and leaves the manifest alone. The 1.0.0 callers of `Frame` are
+unchanged. The PR also moves Dag run conf and argument binding onto the same
+module registration; that part is not overlaid, because this demo only pushes
+XComs.
 
 ## Prerequisites
 
@@ -68,8 +71,8 @@ inside `sbtscala/scala-sbt:eclipse-temurin-17.0.21_9_1.13.1_2.13.18`) twice:
 make overlay
 ```
 
-This copies `execution/Frame.kt` from `$AIRFLOW_SRC`, compiles it against the
-official 1.0.0 jar (`-module-name org.apache.airflow_sdk`, `-Xfriend-paths`), and
+This copies `execution/Frame.kt` and `internal/JacksonModules.kt` from
+`$AIRFLOW_SRC`, compiles them against the official 1.0.0 jar (`-module-name org.apache.airflow_sdk`, `-Xfriend-paths`), and
 overlays the new classes onto a copy of that jar. The manifest still has
 `Airflow-Supervisor-Schema-Version: 2026-10-30`.
 
@@ -200,8 +203,8 @@ cd "$AIRFLOW_SRC/java-sdk"
 
 or, from this directory: `make sdk-check`.
 
-With the patch on `943c8ffceb`, this ran 419 tests with 0 failures, plus ktlint
-and spotless (Gradle 8.14.5 on Temurin 17).
+With the patch on `9c93fe8bbf`, `:sdk:check` ran 423 tests with 0 failures, plus
+ktlint and spotless (Gradle 8.14.6 on Temurin 17).
 
 ## Layout
 
@@ -211,7 +214,7 @@ dags/               Python stub Dag
 scala-src/          sbt thin-bundle project (handlers, Java TaskInput, bean and empty class)
 scripts/            bundle, overlay, run, and evidence helpers
 Makefile            image, bundle, overlay, baseline, patched, patched-scala, evidence, sdk-check
-patches/            setXCom encoding fix and Scala docs patches (apply on 943c8ffceb)
+patches/            setXCom encoding fix and Scala docs patches (apply on 9c93fe8bbf)
 evidence/           captured results (EVIDENCE.md, JSON, log excerpts)
 ```
 

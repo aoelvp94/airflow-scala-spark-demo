@@ -1,19 +1,16 @@
 diff --git a/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst b/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst
-index f71e57a46c..9c9232d846 100644
+index d35eb23e5f..6caf9442b1 100644
 --- a/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst
 +++ b/airflow-core/docs/authoring-and-scheduling/language-sdks/java.rst
-@@ -709,7 +709,9 @@ The ``Client``
-        read another key, Dag or run; see the API reference. For the Java types values arrive as, see
-        :ref:`java-sdk/types`.
+@@ -712,6 +712,7 @@ The ``Client``
+        ``null``. See the API reference. For the Java types values arrive as, see :ref:`java-sdk/types`.
     * - ``setXCom(value)`` / ``setXCom(key, value)``
--     - Publishes an XCom value. The value must be JSON-serializable.
-+     - Publishes an XCom value. The value must be JSON-serializable. Objects are encoded with Jackson
-+       and the Jackson modules in the bundle; an object with no properties to encode raises
-+       ``IllegalArgumentException`` instead of being stored as ``{}``.
+      - Publishes an XCom value. The value must be JSON-serializable; ``null`` stores a null XCom.
++       See :ref:`java-sdk/types`.
     * - ``getTaskStateStore()``
       - This task instance's key/value store, with ``get``, ``set``, ``delete`` and ``clear``. See
         :ref:`java-sdk/task-state-store`.
-@@ -954,6 +956,12 @@ XComs are stored as JSON, so a value read with ``getXCom`` arrives as the matchi
+@@ -956,6 +957,12 @@ XComs are stored as JSON, so a value read with ``getXCom`` arrives as the matchi
       - object
       - ``Map<String, Object>``
  
@@ -27,15 +24,16 @@ index f71e57a46c..9c9232d846 100644
  ``List<Double>`` holds ``Double`` elements. Use ``String`` rather than ``char``: a ``char`` parameter fails on a string
  longer than one character.
 diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt
-index 8b3311382b..9a2b308dc8 100644
+index 45ed65eea6..24253f927f 100644
 --- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt
 +++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/Client.kt
-@@ -181,9 +181,12 @@ class Client internal constructor(
+@@ -190,10 +190,12 @@ class Client internal constructor(
     * @param key XCom key; defaults to [XCOM_RETURN_KEY].
-    * @param value Value to push. Must be JSON-serializable. The SDK rejects byte
-    *    arrays, so encode binary data as a string first, for example with Base64.
-+   *    Objects are encoded with Jackson and the Jackson modules in the bundle,
-+   *    so Scala values need `jackson-module-scala`.
+    * @param value Value to push. Must be JSON-serializable; `null` stores a null
+    *    XCom. The SDK rejects byte arrays, so encode binary data as a string
+-   *    first, for example with Base64.
++   *    first, for example with Base64. Objects are encoded with Jackson and the
++   *    Jackson modules in the bundle, so Scala values need `jackson-module-scala`.
     * @throws ApiError if the API call fails.
     * @throws IllegalArgumentException if [value] is or contains a type that the
 -   *    SDK cannot send, such as a byte array.
@@ -44,7 +42,7 @@ index 8b3311382b..9a2b308dc8 100644
     */
    @JvmOverloads fun setXCom(
      key: String = XCOM_RETURN_KEY,
-@@ -272,11 +275,12 @@ class TaskStateStore internal constructor(
+@@ -282,11 +284,12 @@ class TaskStateStore internal constructor(
     * Stores [value] under [key], replacing any existing value.
     *
     * @param key State key.
@@ -61,10 +59,10 @@ index 8b3311382b..9a2b308dc8 100644
     *   did not pass `[state_store] default_retention_days` to the JVM.
     * @throws ApiError if the API call fails.
 diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt
-index 9cd432692e..c4af4139ed 100644
+index 7eac2da25f..aaed9abcd5 100644
 --- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt
 +++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/execution/Frame.kt
-@@ -20,14 +20,26 @@
+@@ -20,15 +20,27 @@
  package org.apache.airflow.sdk.execution
  
  import com.fasterxml.jackson.annotation.JsonInclude
@@ -87,11 +85,12 @@ index 9cd432692e..c4af4139ed 100644
  import org.apache.airflow.sdk.execution.comm.Discriminator
  import org.apache.airflow.sdk.execution.comm.PutVariable
  import org.apache.airflow.sdk.execution.comm.SetTaskStateStore
-+import org.apache.airflow.sdk.execution.comm.SetXCom
+ import org.apache.airflow.sdk.execution.comm.SetXCom
++import org.apache.airflow.sdk.internal.registerDiscoveredModules
  import org.msgpack.core.MessagePack
  import org.msgpack.core.MessageUnpacker
  import org.msgpack.core.buffer.ArrayBufferInput
-@@ -64,6 +76,34 @@ object Frame {
+@@ -66,6 +78,33 @@ object Frame {
        REQUIRED_NULLABLE_REQUESTS.forEach { addMixIn(it, KeepNullFields::class.java) }
      }
  
@@ -102,22 +101,21 @@ index 9cd432692e..c4af4139ed 100644
 +  private val userValueMapper: ObjectMapper by lazy {
 +    mapper.copy().apply {
 +      registerModule(SimpleModule().setSerializerModifier(RejectEmptyBeans))
-+      findAndRegisterModules()
++      registerDiscoveredModules()
 +    }
 +  }
 +
 +  /**
 +   * Converts a user value into JSON-shaped data (maps, lists, strings, numbers,
-+   * booleans, null) before it goes on the wire.
++   * booleans, null) with [valueMapper].
++   *
++   * The tree is read back with [mapper], which has no discovered modules:
++   * jackson-module-scala replaces untyped deserialization with Scala
++   * collections, which [packAny] cannot send.
 +   *
 +   * @throws IllegalArgumentException if [value] is or contains an object with no
 +   *   properties to encode, or a byte array.
 +   */
-+  internal fun encodeUserValue(value: Any?): Any? = encodeUserValue(value, userValueMapper)
-+
-+  // The tree is read back with [mapper], which has no discovered modules:
-+  // jackson-module-scala replaces untyped deserialization with Scala
-+  // collections, which [packAny] cannot send.
 +  internal fun encodeUserValue(
 +    value: Any?,
 +    valueMapper: ObjectMapper,
@@ -126,26 +124,21 @@ index 9cd432692e..c4af4139ed 100644
    fun encodeRequest(
      id: Int,
      body: Any,
-@@ -134,11 +174,49 @@ object Frame {
+@@ -136,11 +175,45 @@ object Frame {
    }
  
    @Suppress("UNCHECKED_CAST")
 -  private fun toBody(value: Any): Map<String, Any?> =
--    when (value) {
--      is Map<*, *> -> value as Map<String, Any?>
--      else -> mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>
 +  private fun toBody(value: Any): Map<String, Any?> {
 +    if (value is Map<*, *>) return value as Map<String, Any?>
-+    val userValue =
-+      when (value) {
-+        is SetXCom -> value.value
-+        is SetTaskStateStore -> value.value
-+        else -> return mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>
-+      }
-+    val encoded = encodeUserValue(userValue)
-+    return (mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>).also {
-+      if (encoded != null || "value" in it) it["value"] = encoded
++    // Encode the user value first, so [mapper] never sees the raw object.
+     when (value) {
+-      is Map<*, *> -> value as Map<String, Any?>
+-      else -> mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>
++      is SetXCom -> value.value = encodeUserValue(value.value, userValueMapper)
++      is SetTaskStateStore -> value.value = encodeUserValue(value.value, userValueMapper)
      }
++    return mapper.convertValue(value, MutableMap::class.java) as MutableMap<String, Any?>
 +  }
 +}
 +
@@ -180,11 +173,120 @@ index 9cd432692e..c4af4139ed 100644
  }
  
  private fun Discriminator.discriminate(body: Map<*, *>): Class<*>? {
+diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ArgValues.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ArgValues.kt
+index 25b5f021e4..28863f238c 100644
+--- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ArgValues.kt
++++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ArgValues.kt
+@@ -60,7 +60,7 @@ import java.lang.reflect.Type
+  * the task still runs on what it can bind.
+  */
+ object ArgValues {
+-  private val mapper: ObjectMapper = JsonMapper.builder().build().findAndRegisterModules()
++  private val mapper: ObjectMapper = JsonMapper.builder().build().registerDiscoveredModules()
+   private val logger = Logger(ArgValues::class)
+ 
+   /**
+diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ConfBinding.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ConfBinding.kt
+index f5bf61cf2e..364e2c06bc 100644
+--- a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ConfBinding.kt
++++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/ConfBinding.kt
+@@ -44,7 +44,7 @@ private val confMapper: ObjectMapper by lazy {
+     .disable(DeserializationFeature.ADJUST_DATES_TO_CONTEXT_TIME_ZONE)
+     .enable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)
+     .build()
+-    .findAndRegisterModules()
++    .registerDiscoveredModules()
+ }
+ 
+ /**
+diff --git a/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/JacksonModules.kt b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/JacksonModules.kt
+new file mode 100644
+index 0000000000..8753a735bb
+--- /dev/null
++++ b/java-sdk/sdk/src/main/kotlin/org/apache/airflow/sdk/internal/JacksonModules.kt
+@@ -0,0 +1,45 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.apache.airflow.sdk.internal
++
++import com.fasterxml.jackson.databind.Module
++import com.fasterxml.jackson.databind.ObjectMapper
++import org.apache.airflow.sdk.execution.Logger
++
++private val logger = Logger("org.apache.airflow.sdk.internal.JacksonModules")
++
++/**
++ * Registers [modules], by default every Jackson module on the classpath, and
++ * skips with a warning any module that fails to register, such as one built
++ * for a different Jackson version.
++ */
++internal fun ObjectMapper.registerDiscoveredModules(modules: Iterable<Module> = ObjectMapper.findModules()): ObjectMapper {
++  for (module in modules) {
++    try {
++      registerModule(module)
++    } catch (e: Exception) {
++      logger.warning(
++        "Skipping a Jackson module that failed to register",
++        mapOf("module" to module.moduleName, "error" to e.toString()),
++      )
++    }
++  }
++  return this
++}
+diff --git a/java-sdk/sdk/src/test/java/org/apache/airflow/sdk/execution/ModuleEncoded.java b/java-sdk/sdk/src/test/java/org/apache/airflow/sdk/execution/ModuleEncoded.java
+new file mode 100644
+index 0000000000..7cc9c088b4
+--- /dev/null
++++ b/java-sdk/sdk/src/test/java/org/apache/airflow/sdk/execution/ModuleEncoded.java
+@@ -0,0 +1,26 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.apache.airflow.sdk.execution;
++
++/**
++ * A type with no properties and no annotations, so it can only be encoded
++ * through {@link TestValueModule}; without that module Jackson fails on it.
++ */
++public final class ModuleEncoded {}
 diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt
-index 7aa55adb7d..32c333fab4 100644
+index 4684a4e7c5..83d7938f37 100644
 --- a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt
 +++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/CommTest.kt
-@@ -816,6 +816,149 @@ class CommsTest {
+@@ -852,6 +852,149 @@ class CommsTest {
      comm.close()
    }
  
@@ -234,9 +336,9 @@ index 7aa55adb7d..32c333fab4 100644
 +  }
 +
 +  @Test
-+  @DisplayName("setXCom still encodes a Java bean, enum and date-time as Jackson did before")
++  @DisplayName("setXCom encodes a Java bean as its properties, an enum as its name and a date-time as an ISO-8601 string")
 +  @Timeout(value = 30, unit = TimeUnit.SECONDS)
-+  fun setXComSendsJavaObjectsAsBefore() {
++  fun setXComEncodesJavaObjects() {
 +    val details = setXComDetails()
 +    val at = OffsetDateTime.of(2024, 12, 1, 1, 0, 0, 0, ZoneOffset.UTC)
 +
@@ -255,7 +357,7 @@ index 7aa55adb7d..32c333fab4 100644
 +  }
 +
 +  @Test
-+  @DisplayName("taskStateStore.set still encodes a Java bean as Jackson did before")
++  @DisplayName("taskStateStore.set encodes a Java bean as its properties")
 +  @Timeout(value = 30, unit = TimeUnit.SECONDS)
 +  fun taskStateStoreSetSendsBean() {
 +    val (body, failure) =
@@ -319,7 +421,7 @@ index 7aa55adb7d..32c333fab4 100644
 +    return error
 +  }
 +
-+  /** A class with no JavaBean properties; Jackson would previously have stored `{}`. */
++  /** A class with no JavaBean properties. */
 +  private class NoProperties
 +
 +  /** A class Jackson stores as its bean properties. */
@@ -400,10 +502,10 @@ index 0000000000..f48e30d066
 +}
 diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/TestValueModule.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/TestValueModule.kt
 new file mode 100644
-index 0000000000..73948fe887
+index 0000000000..7548bbecaa
 --- /dev/null
 +++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/execution/TestValueModule.kt
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,44 @@
 +/*
 + * Licensed to the Apache Software Foundation (ASF) under one
 + * or more contributor license agreements.  See the NOTICE file
@@ -430,9 +532,6 @@ index 0000000000..73948fe887
 +import com.fasterxml.jackson.databind.module.SimpleModule
 +import com.fasterxml.jackson.databind.ser.std.StdSerializer
 +
-+/** A type with no properties, so it can only be encoded through [TestValueModule]. */
-+class ModuleEncoded
-+
 +/**
 + * Registered through `META-INF/services/com.fasterxml.jackson.databind.Module`,
 + * the way a bundle picks up a module such as `jackson-module-scala`.
@@ -449,6 +548,55 @@ index 0000000000..73948fe887
 +        ) = gen.writeString("encoded by TestValueModule")
 +      },
 +    )
++  }
++}
+diff --git a/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/internal/JacksonModulesTest.kt b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/internal/JacksonModulesTest.kt
+new file mode 100644
+index 0000000000..57b2f00763
+--- /dev/null
++++ b/java-sdk/sdk/src/test/kotlin/org/apache/airflow/sdk/internal/JacksonModulesTest.kt
+@@ -0,0 +1,43 @@
++/*
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *   http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing,
++ * software distributed under the License is distributed on an
++ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++ * KIND, either express or implied.  See the License for the
++ * specific language governing permissions and limitations
++ * under the License.
++ */
++
++package org.apache.airflow.sdk.internal
++
++import com.fasterxml.jackson.databind.ObjectMapper
++import com.fasterxml.jackson.databind.module.SimpleModule
++import org.apache.airflow.sdk.execution.ModuleEncoded
++import org.apache.airflow.sdk.execution.TestValueModule
++import org.junit.jupiter.api.Assertions.assertEquals
++import org.junit.jupiter.api.DisplayName
++import org.junit.jupiter.api.Test
++
++class JacksonModulesTest {
++  /** Fails like a module built for another Jackson version. */
++  private class FailingModule : SimpleModule("FailingModule") {
++    override fun setupModule(context: SetupContext): Unit = throw IllegalStateException("incompatible Jackson version")
++  }
++
++  @Test
++  @DisplayName("registerDiscoveredModules skips a module that fails to register and registers the rest")
++  fun registerDiscoveredModulesSkipsFailingModules() {
++    val mapper = ObjectMapper().registerDiscoveredModules(listOf(FailingModule(), TestValueModule()))
++
++    assertEquals("\"encoded by TestValueModule\"", mapper.writeValueAsString(ModuleEncoded()))
 +  }
 +}
 diff --git a/java-sdk/sdk/src/test/resources/META-INF/services/com.fasterxml.jackson.databind.Module b/java-sdk/sdk/src/test/resources/META-INF/services/com.fasterxml.jackson.databind.Module

@@ -6,9 +6,9 @@ These runs were produced by the README steps in this directory (local only; noth
 ## baseline
 
 - dag_id: `setxcom_fix`
-- run_id: `reviewer_demo_baseline_20261120T221123`
-- start: 2026-11-20 22:11:30 Asia/Tbilisi (UTC+4)
-- end: 2026-11-20 22:11:57 Asia/Tbilisi (UTC+4)
+- run_id: `reviewer_demo_baseline_20261127T190512`
+- start: 2026-11-27 19:05:16 Asia/Tbilisi (UTC+4)
+- end: 2026-11-27 19:06:16 Asia/Tbilisi (UTC+4)
 - DAG state: **failed**
 
 | task | state | XCom `return_value` | error |
@@ -26,9 +26,9 @@ These runs were produced by the README steps in this directory (local only; noth
 ## patched
 
 - dag_id: `setxcom_fix`
-- run_id: `reviewer_demo_patched_20261120T221221`
-- start: 2026-11-20 22:12:27 Asia/Tbilisi (UTC+4)
-- end: 2026-11-20 22:13:00 Asia/Tbilisi (UTC+4)
+- run_id: `reviewer_demo_patched_20261127T190642`
+- start: 2026-11-27 19:06:47 Asia/Tbilisi (UTC+4)
+- end: 2026-11-27 19:07:39 Asia/Tbilisi (UTC+4)
 - DAG state: **failed**
 
 | task | state | XCom `return_value` | error |
@@ -46,9 +46,9 @@ These runs were produced by the README steps in this directory (local only; noth
 ## patched-scala
 
 - dag_id: `setxcom_fix`
-- run_id: `reviewer_demo_patched_scala_20261120T221403`
-- start: 2026-11-20 22:15:43 Asia/Tbilisi (UTC+4)
-- end: 2026-11-20 22:16:25 Asia/Tbilisi (UTC+4)
+- run_id: `reviewer_demo_patched_scala_20261127T190810`
+- start: 2026-11-27 19:08:18 Asia/Tbilisi (UTC+4)
+- end: 2026-11-27 19:09:58 Asia/Tbilisi (UTC+4)
 - DAG state: **failed**
 
 | task | state | XCom `return_value` | error |
